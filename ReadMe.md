@@ -1,11 +1,11 @@
 # BuddyPond Meme Client
 ## Built with [$LIBERTY](https://pump.fun/coin/4GKTTPSiyGPiRmjQkr82WKoeNykguarRZKwdwJtXpump)
 
-The BuddyPond Meme Client is simple web application that serves memes from the `memes.json` file and hotlinks to assets at [https://memes.marak.com](https://memes.marak.com)
+The BuddyPond Meme Client is simple web application that serves memes from the `memes.json` file and hotlinks to assets at [https://meme.marak.com](https://meme.marak.com)
 
 
 ## LIVE DEMO
-## [https://memes.marak.com](https://memes.marak.com)
+## [https://meme.marak.com](https://meme.marak.com)
 
 ## Development
 
