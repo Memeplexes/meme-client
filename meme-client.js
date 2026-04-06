@@ -10,20 +10,35 @@ const floatingOctocat = document.querySelector("#floating-octocat");
 const initialQuery = new URLSearchParams(window.location.search).get("q") || "liberty";
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
 
-const VOTE_API_URL = "http://localhost:8787"; // dev
+let VOTE_API_URL = "https://meme-server.cloudflare1973.workers.dev/api/meme";
+// VOTE_API_URL = "http://localhost:8888/api/meme";
 
-function castMemeVote(state) {
-  /* Remark: keep all commented out code for now
+function getTopMemes() {
+  return fetch(`${VOTE_API_URL}/top`)
+    .then(response => response.json())
+    .then(data => {
+      console.log('Top Memes Response:', data);
+      if (data.success) {
+        return data.memes;
+      } else {
+        throw new Error('Failed to fetch top memes');
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching top memes:', error);
+      return [];
+    });
+}
+
+function castMemeVote(state, value) {
+  console.log("Casting vote for meme:", state);
   fetch(`${VOTE_API_URL}/vote`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ memeId: state.file })
+    body: JSON.stringify({ hash: state.checksum, value })
   }).catch(error => {
     console.error("Vote failed:", error);
   });
-  */
-  console.log(state);
-  console.log(`Casting vote for: ${state.file}`);
 }
 
 const focusSearchInput = () => document.querySelector("#search-input")?.focus();
@@ -55,15 +70,49 @@ if (document.readyState === "loading") {
 const searchInput = document.querySelector("#search-input");
 initializeRainbowPrompt({ searchInput, initialQuery });
 
-fetch("memes.json")
-  .then(r => r.json())
-  .then(files => initializeMemeFeed({
-    files,
-    feed: $feed,
-    initialQuery,
-    // castMemeVote,
-    createContainer,
-    filterFiles,
-    ejectMedia,
-    injectMedia
-  }));
+Promise.all([
+  fetch("memes.json").then(r => r.json()),
+  getTopMemes()
+])
+  .then(([files, memes]) => {
+    const votesByHash = new Map(memes.map(({ hash, votes }) => [hash, votes]));
+
+    files.sort((a, b) => {
+      const aVotes = votesByHash.get(a.checksum ?? a.filename);
+      const bVotes = votesByHash.get(b.checksum ?? b.filename);
+
+      if (aVotes === undefined) return bVotes === undefined ? 0 : 1;
+      if (bVotes === undefined) return -1;
+      return bVotes - aVotes;
+    });
+
+    // this will randomize the order of memes with the same vote count to make it more interesting for users and prevent the same memes from always being in the same order, we can optimize this later if needed but it should be fine for now since we don't have that many memes
+    for (let start = 0; start < files.length;) {
+      const voteCount = votesByHash.get(files[start].checksum ?? files[start].filename);
+      let end = start + 1;
+
+      while (end < files.length && votesByHash.get(files[end].checksum ?? files[end].filename) === voteCount) {
+        end += 1;
+      }
+
+      for (let i = end - 1; i > start; i -= 1) {
+        const j = start + Math.floor(Math.random() * (i - start + 1));
+        const temp = files[i];
+        files[i] = files[j];
+        files[j] = temp;
+      }
+
+      start = end;
+    }
+
+    initializeMemeFeed({
+      files,
+      feed: $feed,
+      initialQuery,
+      castMemeVote,
+      createContainer,
+      filterFiles,
+      ejectMedia,
+      injectMedia
+    });
+  });
