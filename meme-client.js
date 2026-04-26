@@ -1,9 +1,9 @@
+import "./lib/SearchBarTags.js";
 import { createContainer } from "./lib/createContainer.js";
 import { filterFiles } from "./lib/filterFiles.js";
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
-import { initializeRainbowPrompt } from "./lib/initializeRainbowPrompt.js";
 
 const $feed = document.querySelector("#feed");
 const floatingOctocat = document.querySelector("#floating-octocat");
@@ -67,8 +67,9 @@ if (document.readyState === "loading") {
   focusSearchInput();
 }
 
-const searchInput = document.querySelector("#search-input");
-initializeRainbowPrompt({ searchInput, initialQuery });
+let searchInput = document.querySelector("search-bar-tags#search-input");
+searchInput?.setAttribute("initial-query", initialQuery);
+console.log('Search input element:', searchInput);
 
 Promise.all([
   fetch("memes.json").then(r => r.json()),

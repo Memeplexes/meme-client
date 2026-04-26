@@ -116,6 +116,12 @@
       -webkit-backdrop-filter: blur(10px);
     }
 
+    .search-box search-bar-tags {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .search-box input::placeholder {
       color: rgba(255, 255, 255, 0.5);
     }
@@ -175,11 +181,23 @@
 
   <div class="feed" id="feed"></div>
   <div class="search-shell">
+
+
+  
     <label class="search-box" for="search-input">
+      <!--
       <input id="search-input" type="search" placeholder="Search by filename" autocapitalize="none" autocomplete="off"
         autocorrect="off" spellcheck="false">
+        -->
+          <search-bar-tags 
+  id="search-input"  
+  placeholder="Search..."
+  initial-query="your initial query here">HELLo do you like birds
+</search-bar-tags>
+
     </label>
   </div>
+
   <script type="module" src="/meme-client.js"></script>
   <img id="floating-octocat" src="./assets/liberty-octocat-github-256.png" alt="Open meme-client on GitHub"
     role="link" tabindex="0">
