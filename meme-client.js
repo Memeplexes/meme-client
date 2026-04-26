@@ -4,42 +4,12 @@ import { filterFiles } from "./lib/filterFiles.js";
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
+import { searchMemes, getRandomMemes, getTopMemes, castMemeVote } from "./lib/api.js";
 
 const $feed = document.querySelector("#feed");
 const floatingOctocat = document.querySelector("#floating-octocat");
 const initialQuery = new URLSearchParams(window.location.search).get("q") || "liberty";
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
-
-let VOTE_API_URL = "https://meme-server.cloudflare1973.workers.dev/api/meme";
-// VOTE_API_URL = "http://localhost:8888/api/meme";
-
-function getTopMemes() {
-  return fetch(`${VOTE_API_URL}/top`)
-    .then(response => response.json())
-    .then(data => {
-      console.log('Top Memes Response:', data);
-      if (data.success) {
-        return data.memes;
-      } else {
-        throw new Error('Failed to fetch top memes');
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching top memes:', error);
-      return [];
-    });
-}
-
-function castMemeVote(state, value) {
-  console.log("Casting vote for meme:", state);
-  fetch(`${VOTE_API_URL}/vote`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ hash: state.checksum, value })
-  }).catch(error => {
-    console.error("Vote failed:", error);
-  });
-}
 
 const focusSearchInput = () => document.querySelector("#search-input")?.focus();
 const openGitHubRepo = () => window.open(GITHUB_URL, "_blank", "noopener,noreferrer");
@@ -71,9 +41,12 @@ let searchInput = document.querySelector("search-bar-tags#search-input");
 searchInput?.setAttribute("initial-query", initialQuery);
 console.log('Search input element:', searchInput);
 
+// TODO: refactor usage of memes.json and search to use the searchMemes API instead of loading memes.json directly
+// Remark: no longer loading memes.json, using API instead
 Promise.all([
   fetch("memes.json").then(r => r.json()),
   getTopMemes()
+  //getRandomMemes()
 ])
   .then(([files, memes]) => {
     const votesByHash = new Map(memes.map(({ hash, votes }) => [hash, votes]));

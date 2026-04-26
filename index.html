@@ -151,6 +151,21 @@
       box-shadow: 0 0 18px rgba(255, 255, 255, 0.75);
     }
 
+    #upload-memes {
+      position: fixed;
+      left: 16px;
+      bottom: calc(96px + env(safe-area-inset-bottom));
+      z-index: 1001;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: black;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
     @media (max-width: 767px) {
       #floating-octocat {
         right: 12px;
@@ -178,29 +193,59 @@
 </head>
 
 <body>
-
+  <h1 class="me"> </h1>
   <div class="feed" id="feed"></div>
   <div class="search-shell">
 
-
-  
     <label class="search-box" for="search-input">
       <!--
       <input id="search-input" type="search" placeholder="Search by filename" autocapitalize="none" autocomplete="off"
         autocorrect="off" spellcheck="false">
         -->
-          <search-bar-tags 
-  id="search-input"  
-  placeholder="Search..."
-  initial-query="your initial query here">HELLo do you like birds
-</search-bar-tags>
+      <search-bar-tags id="search-input" placeholder="Search..." initial-query="your initial query here">HELLo do you
+        like birds
+      </search-bar-tags>
 
     </label>
   </div>
 
   <script type="module" src="/meme-client.js"></script>
-  <img id="floating-octocat" src="./assets/liberty-octocat-github-256.png" alt="Open meme-client on GitHub"
-    role="link" tabindex="0">
+  <!-- <script src="https://buddypond.com/bp.js"></script> -->
+  <script src="http://localhost/bp.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async (event) => {
+
+      await bp.init({
+        // env: 'dev',
+        host: 'http://192.168.200.59'
+      });
+      bp.on('auth::qtoken', 'memeplexes-login', (qtoken) => {
+        console.log('Received qtoken in meme feed:', qtoken);
+        let { me } = qtoken;
+        // update title bar with me
+        document.title = `Meme Feed - Logged in as ${me}`;
+        document.querySelector('.me').textContent = `Logged in as ${me}`;
+      });
+      bp.open('auth');
+
+
+      // click event on .upload-memes
+      document.getElementById('upload-memes').addEventListener('click', () => {
+        bp.open('file-explorer', {
+          // panel: '.targetDiv2'   // optional, default mode is Window
+        });
+      });
+
+      //bp.open('taskbar');      // taskbar app defaults fixed bottom
+    });
+  </script>
+  <img id="floating-octocat" src="./assets/liberty-octocat-github-256.png" alt="Open meme-client on GitHub" role="link"
+    tabindex="0">
+    <!--
+    <button id="upload-memes">
+      UPLOAD
+    </button>
+    -->
 </body>
 
 </html>
