@@ -8,7 +8,7 @@ import { searchMemes, getRandomMemes, getTopMemes, castMemeVote } from "./lib/ap
 
 const $feed = document.querySelector("#feed");
 const floatingOctocat = document.querySelector("#floating-octocat");
-const initialQuery = new URLSearchParams(window.location.search).get("q") || "liberty";
+const initialQuery = new URLSearchParams(window.location.search).get("q") || "";
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
 
 const focusSearchInput = () => document.querySelector("#search-input")?.focus();
@@ -41,10 +41,8 @@ let searchInput = document.querySelector("search-bar-tags#search-input");
 searchInput?.setAttribute("initial-query", initialQuery);
 console.log('Search input element:', searchInput);
 
-// TODO: refactor usage of memes.json and search to use the searchMemes API instead of loading memes.json directly
-// Remark: no longer loading memes.json, using API instead
 Promise.all([
-  fetch("memes.json").then(r => r.json()),
+  searchMemes({ query: initialQuery, limit: 100, offset: 0 }),
   getTopMemes()
   //getRandomMemes()
 ])
@@ -83,6 +81,7 @@ Promise.all([
       files,
       feed: $feed,
       initialQuery,
+      searchMemes,
       castMemeVote,
       createContainer,
       filterFiles,
