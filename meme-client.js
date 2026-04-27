@@ -39,10 +39,57 @@ if (document.readyState === "loading") {
 
 let searchInput = document.querySelector("search-bar-tags#search-input");
 searchInput?.setAttribute("initial-query", initialQuery);
-console.log('Search input element:', searchInput);
+
+const SEARCH_PAGE_SIZE = 10;
+const SEARCH_RESULTS_LIMIT = 100;
+let searchOffset = SEARCH_PAGE_SIZE;
+let activeQuery = initialQuery;
+let isLoadingMore = false;
+let hasMoreMemes = true;
+
+const updateSearchQueryParam = query => {
+  const url = new URL(window.location.href);
+  const trimmedQuery = query.trim();
+
+  if (trimmedQuery) {
+    url.searchParams.set("q", trimmedQuery);
+  } else {
+    url.searchParams.delete("q");
+  }
+
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+};
+
+const runSearch = query => {
+  activeQuery = query.trim();
+  searchOffset = SEARCH_RESULTS_LIMIT;
+  hasMoreMemes = true;
+  isLoadingMore = false;
+  updateSearchQueryParam(activeQuery);
+  searchInput?.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
+searchInput?.addEventListener("change", event => {
+  console.log("Search input changed:", event);
+  if (event?.detail?.value !== undefined) {
+    // get the current value of the search input and update the URL query parameter, this will allow users to share the URL with the current search query and also allows us to keep the search state in sync with the URL
+    let currentValue = searchInput.value;
+    console.log("Current search input value:", currentValue);
+    runSearch(currentValue);
+  //}
+    //runSearch(event.detail.value);
+  }
+});
+
+searchInput?.addEventListener("submit", event => {
+  console.log("Search input submitted:", event);
+  if (event?.detail?.value !== undefined) {
+    runSearch(event.detail.value);
+  }
+});
 
 Promise.all([
-  searchMemes({ query: initialQuery, limit: 100, offset: 0 }),
+  searchMemes({ query: initialQuery, limit: SEARCH_PAGE_SIZE, offset: 0 }),
   getTopMemes()
   //getRandomMemes()
 ])
@@ -77,7 +124,9 @@ Promise.all([
       start = end;
     }
 
-    initializeMemeFeed({
+    hasMoreMemes = files.length === SEARCH_PAGE_SIZE;
+
+    const memeFeed = initializeMemeFeed({
       files,
       feed: $feed,
       initialQuery,
@@ -88,4 +137,45 @@ Promise.all([
       ejectMedia,
       injectMedia
     });
+
+    const loadMoreMemes = async () => {
+      if (isLoadingMore || !hasMoreMemes) return;
+
+      isLoadingMore = true;
+
+      try {
+        const nextFiles = await searchMemes({
+          query: activeQuery,
+          limit: SEARCH_PAGE_SIZE,
+          offset: searchOffset
+        });
+
+        const appendedCount = memeFeed?.appendFiles?.(nextFiles) ?? 0;
+        searchOffset += appendedCount;
+        hasMoreMemes = nextFiles.length === SEARCH_PAGE_SIZE;
+      } finally {
+        isLoadingMore = false;
+      }
+    };
+
+    const attachInfiniteScrollObserver = () => {
+      const sentinel = document.querySelector("#infinite-scroll-sentinel");
+      if (!sentinel) {
+        requestAnimationFrame(attachInfiniteScrollObserver);
+        return;
+      }
+
+      const observer = new IntersectionObserver(entries => {
+        if (entries[0]?.isIntersecting) {
+          loadMoreMemes();
+        }
+      }, {
+        rootMargin: "1000px 0px 1200px 0px",
+        threshold: 0
+      });
+
+      observer.observe(sentinel);
+    };
+
+    attachInfiniteScrollObserver();
   });
