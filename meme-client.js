@@ -7,12 +7,133 @@ import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
 import { searchMemes, getRandomMemes, getTopMemes, castMemeVote } from "./lib/api.js";
 
 const $feed = document.querySelector("#feed");
+const sideMenu = document.querySelector("#side-menu");
 const floatingOctocat = document.querySelector("#floating-octocat");
 const initialQuery = new URLSearchParams(window.location.search).get("q") || "";
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
+const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
+const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
+const SIDEBAR_FLAG_ENABLED =
+  window.location.search.includes("immersive=1") ||
+  window.location.search.includes("sidebar=hidden") ||
+  window.MEME_CLIENT_HIDE_SIDEBAR === true;
 
 const focusSearchInput = () => document.querySelector("#search-input")?.focus();
 const openGitHubRepo = () => window.open(GITHUB_URL, "_blank", "noopener,noreferrer");
+const isDesktopViewport = () => window.innerWidth >= 768;
+
+const readStoredSidebarHidden = () => {
+  try {
+    return window.localStorage.getItem(SIDEBAR_HIDDEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const persistSidebarHidden = isHidden => {
+  try {
+    window.localStorage.setItem(SIDEBAR_HIDDEN_STORAGE_KEY, String(isHidden));
+  } catch {
+    // Ignore storage failures in private browsing or restricted contexts.
+  }
+};
+
+const getInitialSidebarHiddenState = () => {
+  const storedValue = readStoredSidebarHidden();
+  if (storedValue !== null) {
+    return storedValue === "true";
+  }
+
+  return SIDEBAR_FLAG_ENABLED;
+};
+
+(() => {
+  if (!sideMenu) {
+    return null;
+  }
+
+  const style = document.createElement("style");
+  style.textContent = `
+    @media (min-width: 768px) {
+      side-menu {
+        transition: transform 180ms ease, opacity 180ms ease;
+      }
+
+      body.${SIDEBAR_HIDDEN_CLASS} {
+        padding-left: 0;
+      }
+
+      body.${SIDEBAR_HIDDEN_CLASS} .search-shell {
+        left: 0;
+      }
+
+      body.${SIDEBAR_HIDDEN_CLASS} side-menu {
+        transform: translateX(calc(var(--side-menu-width, 250px) * -1));
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .sidebar-visibility-toggle {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        z-index: 1002;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        background: rgba(24, 24, 24, 0.94);
+        color: white;
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+    }
+
+    @media (max-width: 767px) {
+      .sidebar-visibility-toggle {
+        display: none;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "sidebar-visibility-toggle";
+  button.setAttribute("aria-controls", "side-menu");
+  document.body.appendChild(button);
+
+  const syncButton = isHidden => {
+    button.textContent = isHidden ? "Show Menu" : "Hide Menu";
+    button.setAttribute("aria-label", isHidden ? "Show sidebar" : "Hide sidebar");
+    button.setAttribute("aria-pressed", String(!isHidden));
+  };
+
+  const setSidebarHidden = isHidden => {
+    const shouldHide = isDesktopViewport() && isHidden;
+    document.body.classList.toggle(SIDEBAR_HIDDEN_CLASS, shouldHide);
+    if (shouldHide) {
+      sideMenu.open = false;
+      document.body.classList.remove("menu-open");
+    }
+    syncButton(shouldHide);
+    persistSidebarHidden(isHidden);
+  };
+
+  button.addEventListener("click", () => {
+    const nextHidden = !document.body.classList.contains(SIDEBAR_HIDDEN_CLASS);
+    setSidebarHidden(nextHidden);
+  });
+
+  window.addEventListener("resize", () => {
+    setSidebarHidden(getInitialSidebarHiddenState());
+  });
+
+  setSidebarHidden(getInitialSidebarHiddenState());
+  return { setSidebarHidden };
+})();
 
 if (floatingOctocat) {
   floatingOctocat.classList.add("is-interactive");
