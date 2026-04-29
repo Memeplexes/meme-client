@@ -159,40 +159,92 @@ export class MemeClient {
           pointer-events: none;
         }
 
-        .sidebar-visibility-toggle {
+        .sidebar-controls {
           position: fixed;
           top: 16px;
           left: 16px;
           z-index: 1002;
+          display: inline-flex;
+          align-items: stretch;
+          overflow: hidden;
           border: 1px solid rgba(255, 255, 255, 0.16);
           border-radius: 999px;
           background: rgba(24, 24, 24, 0.94);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+
+        .sidebar-home-button,
+        .sidebar-visibility-toggle {
+          border: 0;
+          background: transparent;
           color: white;
-          padding: 12px 16px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+        }
+
+        .sidebar-home-button {
+          padding: 12px 16px;
+        }
+
+        .sidebar-home-button:hover,
+        .sidebar-visibility-toggle:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-visibility-toggle {
+          position: relative;
+          width: 46px;
+          border-left: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar-visibility-toggle::before,
+        .sidebar-visibility-toggle::after {
+          content: "";
+          position: absolute;
+          top: 14px;
+          bottom: 14px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.9);
+        }
+
+        .sidebar-visibility-toggle::before {
+          left: 12px;
+          width: 8px;
+        }
+
+        .sidebar-visibility-toggle::after {
+          left: 24px;
+          width: 10px;
+          opacity: 0.5;
         }
       }
 
       @media (max-width: 767px) {
-        .sidebar-visibility-toggle {
+        .sidebar-controls {
           display: none;
         }
       }
     `;
     document.head.appendChild(style);
 
+    const controls = document.createElement("div");
+    controls.className = "sidebar-controls";
+
+    const homeButton = document.createElement("button");
+    homeButton.type = "button";
+    homeButton.className = "sidebar-home-button";
+    homeButton.textContent = "Home";
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "sidebar-visibility-toggle";
     button.setAttribute("aria-controls", "side-menu");
-    document.body.appendChild(button);
+    controls.append(homeButton, button);
+    document.body.appendChild(controls);
 
     const syncButton = isHidden => {
-      button.textContent = isHidden ? "Show Menu" : "Hide Menu";
       button.setAttribute("aria-label", isHidden ? "Show sidebar" : "Hide sidebar");
       button.setAttribute("aria-pressed", String(!isHidden));
     };
@@ -209,6 +261,10 @@ export class MemeClient {
       syncButton(shouldHide);
       this.persistSidebarHidden(isHidden);
     };
+
+    homeButton.addEventListener("click", () => {
+      this.updateSearchLocation({ query: "", creator: "" });
+    });
 
     button.addEventListener("click", () => {
       const nextHidden = !document.body.classList.contains(SIDEBAR_HIDDEN_CLASS);

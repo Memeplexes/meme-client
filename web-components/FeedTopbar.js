@@ -3,6 +3,7 @@ import { getActiveVoters, getDailyVotes, getTotalCreators, getTotalMemes } from 
 class FeedTopbar extends HTMLElement {
   async #loadStats() {
     const totalMemesElement = this.querySelector("#total-memes");
+    const pageTopbarTotalMemesElement = document.querySelector("[data-page-topbar-total-memes]");
     const totalCreatorsElement = this.querySelector("#total-creators");
     const votesTodayElement = this.querySelector("#votes-today");
     const activeNowElement = this.querySelector("#active-now");
@@ -15,6 +16,10 @@ class FeedTopbar extends HTMLElement {
 
     if (totalMemesElement && typeof totalMemes === "number") {
       totalMemesElement.textContent = totalMemes.toLocaleString();
+    }
+
+    if (pageTopbarTotalMemesElement && typeof totalMemes === "number") {
+      pageTopbarTotalMemesElement.textContent = totalMemes.toLocaleString();
     }
 
     if (totalCreatorsElement && typeof totalCreators === "number") {
