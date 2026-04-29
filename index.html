@@ -48,6 +48,42 @@
       gap: 20px;
     }
 
+    .feed-topbar {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      box-sizing: border-box;
+    }
+
+    .feed-stat {
+      border: 1px solid rgba(36, 161, 83, 0.35);
+      border-radius: 14px;
+      background: rgba(17, 17, 17, 0.94);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .feed-stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .feed-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1eab55;
+      line-height: 1;
+    }
+
     .meme {
       margin-bottom: 0;
     }
@@ -176,6 +212,10 @@
       align-items: start;
     }
 
+    body[data-view="grid"] .feed-topbar {
+      max-width: 1200px;
+    }
+
     body[data-view="grid"] .search-box {
       width: min(100%, 1200px);
     }
@@ -233,6 +273,19 @@
     }
 
     @media (max-width: 767px) {
+      .feed-topbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .feed-stat {
+        padding: 12px 14px;
+      }
+
+      .feed-stat-value {
+        font-size: 20px;
+      }
+
       .view-toggle {
         top: 12px;
         right: 12px;
@@ -330,6 +383,7 @@
       color: #fff;
     }
   </style>
+
   <side-menu id="side-menu" title="Feed" toggle-label="Open feed menu" menu-label="Feed menu">
     <a class="is-active" href="#hot" data-side-menu-item data-active><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" alt="" aria-hidden="true"><span class="side-menu-label">Hot</span></a>
     <a href="#new" data-side-menu-item data-nav-endpoint="/api/meme/latest"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2728.svg" alt="" aria-hidden="true"><span class="side-menu-label">New</span></a>
@@ -339,7 +393,11 @@
     <a href="#top-creators" data-side-menu-item data-nav-endpoint="/api/meme/creators/top"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f451.svg" alt="" aria-hidden="true"><span class="side-menu-label">Top Creators</span></a>
   </side-menu>
   <h1 class="me"> </h1>
-  <div class="feed" id="feed"></div>
+
+  <feed-topbar></feed-topbar>
+
+  <div class="feed" id="feed">
+  </div>
   <div class="search-shell">
 
     <label class="search-box" for="search-input">
@@ -355,6 +413,7 @@
     data-list-view-label="☰ List">▦ Grid</button>
 
   <script type="module" src="/meme-client.js"></script>
+  <script type="module" src="./web-components/FeedTopbar.js"></script>
   <script type="module" src="./lib/web-components/SideMenu.js"></script>
   <script>
     customElements.whenDefined("side-menu").then(() => {
