@@ -1,16 +1,22 @@
 import "./lib/web-components/SearchBarTags.js";
 import "./lib/web-components/MemeCard.js";
+import "./lib/web-components/FloatingOctocat.js";
 import { filterFiles } from "./lib/filterFiles.js";
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
 import { searchMemes, getRandomMemes, getTopMemes, castMemeVote } from "./lib/api.js";
+import { createAttachInfiniteScrollObserver } from "./attachInfiniteScrollObserver.js";
+import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
+import { loadMenuFeed } from "./lib/loadMenuFeed.js";
 
 const $feed = document.querySelector("#feed");
 const sideMenu = document.querySelector("#side-menu");
-const floatingOctocat = document.querySelector("#floating-octocat");
-const initialQuery = new URLSearchParams(window.location.search).get("q") || "";
+const searchParams = new URLSearchParams(window.location.search);
+const initialCreator = searchParams.get("c") || "";
+const initialQuery = initialCreator || searchParams.get("q") || "";
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
+const API_ORIGIN = "http://localhost:8888";
 const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
 const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
 const SIDEBAR_FLAG_ENABLED =
@@ -19,7 +25,6 @@ const SIDEBAR_FLAG_ENABLED =
   window.MEME_CLIENT_HIDE_SIDEBAR === true;
 
 const focusSearchInput = () => document.querySelector("#search-input")?.focus();
-const openGitHubRepo = () => window.open(GITHUB_URL, "_blank", "noopener,noreferrer");
 const isDesktopViewport = () => window.innerWidth >= 768;
 
 const readStoredSidebarHidden = () => {
@@ -135,22 +140,7 @@ const getInitialSidebarHiddenState = () => {
   return { setSidebarHidden };
 })();
 
-if (floatingOctocat) {
-  floatingOctocat.classList.add("is-interactive");
-  floatingOctocat.addEventListener("mouseenter", () => {
-    floatingOctocat.classList.add("is-hovered");
-  });
-  floatingOctocat.addEventListener("mouseleave", () => {
-    floatingOctocat.classList.remove("is-hovered");
-  });
-  floatingOctocat.addEventListener("click", openGitHubRepo);
-  floatingOctocat.addEventListener("keydown", event => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openGitHubRepo();
-    }
-  });
-}
+document.querySelector("floating-octocat")?.setAttribute("href", GITHUB_URL);
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", focusSearchInput, { once: true });
@@ -165,12 +155,109 @@ const SEARCH_PAGE_SIZE = 10;
 const SEARCH_RESULTS_LIMIT = 100;
 let searchOffset = SEARCH_PAGE_SIZE;
 let activeQuery = initialQuery;
+let activeCreator = initialCreator;
+let activeFeedMode = "hot";
 let isLoadingMore = false;
 let hasMoreMemes = true;
+let memeFeedInstance = null;
+let defaultHotFiles = [];
+let infiniteScrollObserver = null;
+const feedState = {
+  get activeCreator() {
+    return activeCreator;
+  },
+  get activeFeedMode() {
+    return activeFeedMode;
+  },
+  get activeQuery() {
+    return activeQuery;
+  },
+  get defaultHotFiles() {
+    return defaultHotFiles;
+  },
+  get hasMoreMemes() {
+    return hasMoreMemes;
+  },
+  get isLoadingMore() {
+    return isLoadingMore;
+  },
+  get searchOffset() {
+    return searchOffset;
+  },
+  set activeCreator(value) {
+    activeCreator = value;
+  },
+  set activeFeedMode(value) {
+    activeFeedMode = value;
+  },
+  set activeQuery(value) {
+    activeQuery = value;
+  },
+  set defaultHotFiles(value) {
+    defaultHotFiles = value;
+  },
+  set hasMoreMemes(value) {
+    hasMoreMemes = value;
+  },
+  set isLoadingMore(value) {
+    isLoadingMore = value;
+  },
+  set searchOffset(value) {
+    searchOffset = value;
+  }
+};
+
+const resetRenderedFeed = () => {
+  Array.from($feed.children).forEach(child => window.cleanupMemeState?.(child));
+  $feed.replaceChildren();
+};
+
+const initializeFeed = ({ files, initialQueryValue = initialQuery }) => {
+  memeFeedInstance?.destroy?.();
+  resetRenderedFeed();
+
+  memeFeedInstance = initializeMemeFeed({
+    files,
+    feed: $feed,
+    initialQuery: initialQueryValue,
+    searchMemes,
+    castMemeVote,
+    filterFiles,
+    ejectMedia,
+    injectMedia
+  });
+
+  return memeFeedInstance;
+};
+
+const updateActiveNavItem = item => {
+  sideMenu?.querySelectorAll("[data-side-menu-item]").forEach(link => {
+    link.toggleAttribute("data-active", link === item);
+  });
+};
+
+const handleLoadMenuFeed = item => loadMenuFeed(item, {
+  apiOrigin: API_ORIGIN,
+  initializeFeed,
+  loadDefaultFeed,
+  searchInput,
+  searchPageSize: SEARCH_PAGE_SIZE,
+  updateSearchQueryParam,
+  state: feedState
+});
+
+const getActiveFilters = () => {
+  const params = new URLSearchParams(window.location.search);
+  const creator = params.get("c") || "";
+  const query = creator ? "" : (params.get("q") || "");
+  return { query, creator };
+};
 
 const updateSearchQueryParam = query => {
   const url = new URL(window.location.href);
   const trimmedQuery = query.trim();
+
+  url.searchParams.delete("q");
 
   if (trimmedQuery) {
     url.searchParams.set("q", trimmedQuery);
@@ -178,16 +265,37 @@ const updateSearchQueryParam = query => {
     url.searchParams.delete("q");
   }
 
+  url.searchParams.delete("c");
+
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
 };
 
-const runSearch = query => {
+const runSearch = async query => {
+  console.log("Running search with query:", query);
   activeQuery = query.trim();
-  searchOffset = SEARCH_RESULTS_LIMIT;
+  activeCreator = "";
   hasMoreMemes = true;
   isLoadingMore = false;
   updateSearchQueryParam(activeQuery);
-  searchInput?.dispatchEvent(new Event("input", { bubbles: true }));
+
+  const files = await searchMemes({
+    query: activeQuery,
+    creator: "",
+    limit: SEARCH_PAGE_SIZE,
+    offset: 0
+  });
+
+  activeFeedMode = "hot";
+  searchOffset = files.length;
+  hasMoreMemes = files.length === SEARCH_PAGE_SIZE;
+
+  /*
+  initializeFeed({
+    files,
+    initialQueryValue: activeQuery
+  });
+  */
+  // attachInfiniteScrollObserver();
 };
 
 searchInput?.addEventListener("change", event => {
@@ -209,96 +317,62 @@ searchInput?.addEventListener("submit", event => {
   }
 });
 
-// TODO: 
-Promise.all([
-  searchMemes({ query: initialQuery, limit: SEARCH_PAGE_SIZE, offset: 0 }),
-  getTopMemes()
-  //getRandomMemes()
-])
-  .then(([files, memes]) => {
-    console.log("Initial search results:", files);
-    console.log("Top memes:", memes);
-    const votesByHash = new Map(memes.map(({ hash, votes }) => [hash, votes]));
+const loadMoreMemes = async () => {
+  if (activeFeedMode !== "hot" || isLoadingMore || !hasMoreMemes) return;
 
-    files.sort((a, b) => {
-      const aVotes = votesByHash.get(a.checksum ?? a.filename);
-      const bVotes = votesByHash.get(b.checksum ?? b.filename);
+  isLoadingMore = true;
 
-      if (aVotes === undefined) return bVotes === undefined ? 0 : 1;
-      if (bVotes === undefined) return -1;
-      return bVotes - aVotes;
+  try {
+    const { query, creator } = getActiveFilters();
+    const nextFiles = await searchMemes({
+      query,
+      creator,
+      limit: SEARCH_PAGE_SIZE,
+      offset: searchOffset
     });
 
-    // this will randomize the order of memes with the same vote count to make it more interesting for users and prevent the same memes from always being in the same order, we can optimize this later if needed but it should be fine for now since we don't have that many memes
-    for (let start = 0; start < files.length;) {
-      const voteCount = votesByHash.get(files[start].checksum ?? files[start].filename);
-      let end = start + 1;
+    const appendedCount = memeFeedInstance?.appendFiles?.(nextFiles) ?? 0;
+    searchOffset += appendedCount;
+    hasMoreMemes = nextFiles.length === SEARCH_PAGE_SIZE;
+  } finally {
+    isLoadingMore = false;
+  }
+};
 
-      while (end < files.length && votesByHash.get(files[end].checksum ?? files[end].filename) === voteCount) {
-        end += 1;
-      }
+const attachInfiniteScrollObserver = createAttachInfiniteScrollObserver({
+  getObserver: () => infiniteScrollObserver,
+  loadMoreMemes,
+  setObserver: observer => {
+    infiniteScrollObserver = observer;
+  }
+});
 
-      for (let i = end - 1; i > start; i -= 1) {
-        const j = start + Math.floor(Math.random() * (i - start + 1));
-        const temp = files[i];
-        files[i] = files[j];
-        files[j] = temp;
-      }
+sideMenu?.addEventListener("click", async event => {
+  return;
+  const item = event.target.closest("[data-side-menu-item]");
+  if (!item) {
+    return;
+  }
 
-      start = end;
-    }
+  const hash = item.getAttribute("href");
+  if (hash?.startsWith("#")) {
+    window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}${hash}`);
+  }
 
-    hasMoreMemes = files.length === SEARCH_PAGE_SIZE;
-    console.log("Sorted and randomized search results:", files);
-    const memeFeed = initializeMemeFeed({
-      files,
-      feed: $feed,
-      initialQuery,
-      searchMemes,
-      castMemeVote,
-      filterFiles,
-      ejectMedia,
-      injectMedia
-    });
+  event.preventDefault();
+  const loaded = await handleLoadMenuFeed(item);
+  if (loaded) {
+    updateActiveNavItem(item);
+  }
+});
 
-    const loadMoreMemes = async () => {
-      if (isLoadingMore || !hasMoreMemes) return;
-
-      isLoadingMore = true;
-
-      try {
-        const nextFiles = await searchMemes({
-          query: activeQuery,
-          limit: SEARCH_PAGE_SIZE,
-          offset: searchOffset
-        });
-
-        const appendedCount = memeFeed?.appendFiles?.(nextFiles) ?? 0;
-        searchOffset += appendedCount;
-        hasMoreMemes = nextFiles.length === SEARCH_PAGE_SIZE;
-      } finally {
-        isLoadingMore = false;
-      }
-    };
-
-    const attachInfiniteScrollObserver = () => {
-      const sentinel = document.querySelector("#infinite-scroll-sentinel");
-      if (!sentinel) {
-        requestAnimationFrame(attachInfiniteScrollObserver);
-        return;
-      }
-
-      const observer = new IntersectionObserver(entries => {
-        if (entries[0]?.isIntersecting) {
-          loadMoreMemes();
-        }
-      }, {
-        rootMargin: "1000px 0px 1200px 0px",
-        threshold: 0
-      });
-
-      observer.observe(sentinel);
-    };
-
-    attachInfiniteScrollObserver();
-  });
+loadDefaultFeed({
+  attachInfiniteScrollObserver,
+  getTopMemes,
+  initialCreator,
+  initialQuery,
+  initializeFeed,
+  searchMemes,
+  searchPageSize: SEARCH_PAGE_SIZE,
+  state: feedState
+});
