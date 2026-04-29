@@ -1,5 +1,5 @@
-import "./lib/SearchBarTags.js";
-import "./lib/MemeCard.js";
+import "./lib/web-components/SearchBarTags.js";
+import "./lib/web-components/MemeCard.js";
 import { filterFiles } from "./lib/filterFiles.js";
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
