@@ -351,7 +351,8 @@
     </label>
   </div>
 
-  <button class="view-toggle" id="view-toggle" type="button" aria-pressed="false">Grid View</button>
+  <button class="view-toggle" id="view-toggle" type="button" aria-pressed="false" data-grid-view-label="▦ Grid"
+    data-list-view-label="☰ List">▦ Grid</button>
 
   <script type="module" src="/meme-client.js"></script>
   <script type="module" src="./lib/web-components/SideMenu.js"></script>
@@ -427,7 +428,9 @@
       const toggleButton = document.getElementById('view-toggle');
       if (toggleButton) {
         const isGrid = nextMode === 'grid';
-        toggleButton.textContent = isGrid ? 'List View' : 'Grid View';
+        const listViewLabel = toggleButton.dataset.listViewLabel || '☰ List';
+        const gridViewLabel = toggleButton.dataset.gridViewLabel || '▦ Grid';
+        toggleButton.textContent = isGrid ? listViewLabel : gridViewLabel;
         toggleButton.setAttribute('aria-pressed', String(isGrid));
       }
     };
