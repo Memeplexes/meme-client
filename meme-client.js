@@ -5,374 +5,406 @@ import { filterFiles } from "./lib/filterFiles.js";
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
-import { searchMemes, getRandomMemes, getTopMemes, castMemeVote } from "./lib/api.js";
+import { searchMemes, getTopMemes, castMemeVote } from "./lib/api.js";
 import { createAttachInfiniteScrollObserver } from "./attachInfiniteScrollObserver.js";
 import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
-import { loadMenuFeed } from "./lib/loadMenuFeed.js";
 
-const $feed = document.querySelector("#feed");
-const sideMenu = document.querySelector("#side-menu");
-const searchParams = new URLSearchParams(window.location.search);
-const initialCreator = searchParams.get("c") || "";
-const initialQuery = initialCreator || searchParams.get("q") || "";
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
 const API_ORIGIN = "http://localhost:8888";
+const SEARCH_PAGE_SIZE = 10;
 const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
 const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
-const SIDEBAR_FLAG_ENABLED =
-  window.location.search.includes("immersive=1") ||
-  window.location.search.includes("sidebar=hidden") ||
-  window.MEME_CLIENT_HIDE_SIDEBAR === true;
 
-const focusSearchInput = () => document.querySelector("#search-input")?.focus();
-const isDesktopViewport = () => window.innerWidth >= 768;
-
-const readStoredSidebarHidden = () => {
-  try {
-    return window.localStorage.getItem(SIDEBAR_HIDDEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-};
-
-const persistSidebarHidden = isHidden => {
-  try {
-    window.localStorage.setItem(SIDEBAR_HIDDEN_STORAGE_KEY, String(isHidden));
-  } catch {
-    // Ignore storage failures in private browsing or restricted contexts.
-  }
-};
-
-const getInitialSidebarHiddenState = () => {
-  const storedValue = readStoredSidebarHidden();
-  if (storedValue !== null) {
-    return storedValue === "true";
+class MemeApiClient {
+  constructor(api) {
+    this.api = api;
   }
 
-  return SIDEBAR_FLAG_ENABLED;
-};
-
-(() => {
-  if (!sideMenu) {
-    return null;
+  search({ query = "", creator = "", limit = SEARCH_PAGE_SIZE, offset = 0 }) {
+    return this.api.searchMemes({ query, creator, limit, offset });
   }
 
-  const style = document.createElement("style");
-  style.textContent = `
-    @media (min-width: 768px) {
-      side-menu {
-        transition: transform 180ms ease, opacity 180ms ease;
-      }
+  getTopMemes(...args) {
+    return this.api.getTopMemes(...args);
+  }
 
-      body.${SIDEBAR_HIDDEN_CLASS} {
-        padding-left: 0;
-      }
-
-      body.${SIDEBAR_HIDDEN_CLASS} .search-shell {
-        left: 0;
-      }
-
-      body.${SIDEBAR_HIDDEN_CLASS} side-menu {
-        transform: translateX(calc(var(--side-menu-width, 250px) * -1));
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .sidebar-visibility-toggle {
-        position: fixed;
-        top: 16px;
-        left: 16px;
-        z-index: 1002;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 999px;
-        background: rgba(24, 24, 24, 0.94);
-        color: white;
-        padding: 12px 16px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-      }
-    }
-
-    @media (max-width: 767px) {
-      .sidebar-visibility-toggle {
-        display: none;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "sidebar-visibility-toggle";
-  button.setAttribute("aria-controls", "side-menu");
-  document.body.appendChild(button);
-
-  const syncButton = isHidden => {
-    button.textContent = isHidden ? "Show Menu" : "Hide Menu";
-    button.setAttribute("aria-label", isHidden ? "Show sidebar" : "Hide sidebar");
-    button.setAttribute("aria-pressed", String(!isHidden));
-  };
-
-  const setSidebarHidden = isHidden => {
-    const shouldHide = isDesktopViewport() && isHidden;
-    document.body.classList.toggle(SIDEBAR_HIDDEN_CLASS, shouldHide);
-    if (shouldHide) {
-      sideMenu.open = false;
-      document.body.classList.remove("menu-open");
-    }
-    syncButton(shouldHide);
-    persistSidebarHidden(isHidden);
-  };
-
-  button.addEventListener("click", () => {
-    const nextHidden = !document.body.classList.contains(SIDEBAR_HIDDEN_CLASS);
-    setSidebarHidden(nextHidden);
-  });
-
-  window.addEventListener("resize", () => {
-    setSidebarHidden(getInitialSidebarHiddenState());
-  });
-
-  setSidebarHidden(getInitialSidebarHiddenState());
-  return { setSidebarHidden };
-})();
-
-document.querySelector("floating-octocat")?.setAttribute("href", GITHUB_URL);
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", focusSearchInput, { once: true });
-} else {
-  focusSearchInput();
+  vote(...args) {
+    return this.api.castMemeVote(...args);
+  }
 }
 
-let searchInput = document.querySelector("search-bar-tags#search-input");
-searchInput?.setAttribute("initial-query", initialQuery);
-
-const SEARCH_PAGE_SIZE = 10;
-const SEARCH_RESULTS_LIMIT = 100;
-let searchOffset = SEARCH_PAGE_SIZE;
-let activeQuery = initialQuery;
-let activeCreator = initialCreator;
-let activeFeedMode = "hot";
-let isLoadingMore = false;
-let hasMoreMemes = true;
-let memeFeedInstance = null;
-let defaultHotFiles = [];
-let infiniteScrollObserver = null;
-const feedState = {
-  get activeCreator() {
-    return activeCreator;
-  },
-  get activeFeedMode() {
-    return activeFeedMode;
-  },
-  get activeQuery() {
-    return activeQuery;
-  },
-  get defaultHotFiles() {
-    return defaultHotFiles;
-  },
-  get hasMoreMemes() {
-    return hasMoreMemes;
-  },
-  get isLoadingMore() {
-    return isLoadingMore;
-  },
-  get searchOffset() {
-    return searchOffset;
-  },
-  set activeCreator(value) {
-    activeCreator = value;
-  },
-  set activeFeedMode(value) {
-    activeFeedMode = value;
-  },
-  set activeQuery(value) {
-    activeQuery = value;
-  },
-  set defaultHotFiles(value) {
-    defaultHotFiles = value;
-  },
-  set hasMoreMemes(value) {
-    hasMoreMemes = value;
-  },
-  set isLoadingMore(value) {
-    isLoadingMore = value;
-  },
-  set searchOffset(value) {
-    searchOffset = value;
-  }
-};
-
-const resetRenderedFeed = () => {
-  Array.from($feed.children).forEach(child => window.cleanupMemeState?.(child));
-  $feed.replaceChildren();
-};
-
-const initializeFeed = ({ files, initialQueryValue = initialQuery }) => {
-  memeFeedInstance?.destroy?.();
-  resetRenderedFeed();
-
-  memeFeedInstance = initializeMemeFeed({
-    files,
-    feed: $feed,
-    initialQuery: initialQueryValue,
-    searchMemes,
-    castMemeVote,
-    filterFiles,
-    ejectMedia,
-    injectMedia
-  });
-
-  return memeFeedInstance;
-};
-
-const updateActiveNavItem = item => {
-  sideMenu?.querySelectorAll("[data-side-menu-item]").forEach(link => {
-    link.toggleAttribute("data-active", link === item);
-  });
-};
-
-const handleLoadMenuFeed = item => loadMenuFeed(item, {
-  apiOrigin: API_ORIGIN,
-  initializeFeed,
-  loadDefaultFeed,
-  searchInput,
-  searchPageSize: SEARCH_PAGE_SIZE,
-  updateSearchQueryParam,
-  state: feedState
-});
-
-const getActiveFilters = () => {
-  const params = new URLSearchParams(window.location.search);
-  const creator = params.get("c") || "";
-  const query = creator ? "" : (params.get("q") || "");
-  return { query, creator };
-};
-
-const updateSearchQueryParam = query => {
-  const url = new URL(window.location.href);
-  const trimmedQuery = query.trim();
-
-  url.searchParams.delete("q");
-
-  if (trimmedQuery) {
-    url.searchParams.set("q", trimmedQuery);
-  } else {
-    url.searchParams.delete("q");
+class MemeClientStore {
+  constructor(initialState) {
+    this.state = { ...initialState };
   }
 
-  url.searchParams.delete("c");
-
-  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-};
-
-const runSearch = async query => {
-  console.log("Running search with query:", query);
-  activeQuery = query.trim();
-  activeCreator = "";
-  hasMoreMemes = true;
-  isLoadingMore = false;
-  updateSearchQueryParam(activeQuery);
-
-  const files = await searchMemes({
-    query: activeQuery,
-    creator: "",
-    limit: SEARCH_PAGE_SIZE,
-    offset: 0
-  });
-
-  activeFeedMode = "hot";
-  searchOffset = files.length;
-  hasMoreMemes = files.length === SEARCH_PAGE_SIZE;
-
-  /*
-  initializeFeed({
-    files,
-    initialQueryValue: activeQuery
-  });
-  */
-  // attachInfiniteScrollObserver();
-};
-
-searchInput?.addEventListener("change", event => {
-  console.log("Search input changed:", event);
-  if (event?.detail?.value !== undefined) {
-    // get the current value of the search input and update the URL query parameter, this will allow users to share the URL with the current search query and also allows us to keep the search state in sync with the URL
-    let currentValue = searchInput.value;
-    console.log("Current search input value:", currentValue);
-    runSearch(currentValue);
-  //}
-    //runSearch(event.detail.value);
+  get(key) {
+    return this.state[key];
   }
-});
 
-searchInput?.addEventListener("submit", event => {
-  console.log("Search input submitted:", event);
-  if (event?.detail?.value !== undefined) {
-    runSearch(event.detail.value);
+  set(updates) {
+    Object.assign(this.state, updates);
   }
-});
 
-const loadMoreMemes = async () => {
-  if (activeFeedMode !== "hot" || isLoadingMore || !hasMoreMemes) return;
+  toLegacyState() {
+    return new Proxy(
+      {},
+      {
+        get: (_, key) => this.state[key],
+        set: (_, key, value) => {
+          this.state[key] = value;
+          return true;
+        }
+      }
+    );
+  }
+}
 
-  isLoadingMore = true;
+class MemeClient {
+  constructor({
+    feed,
+    sideMenu,
+    searchInput,
+    floatingOctocat,
+    searchPageSize = SEARCH_PAGE_SIZE,
+    apiOrigin = API_ORIGIN,
+    githubUrl = GITHUB_URL
+  }) {
+    this.feed = feed;
+    this.sideMenu = sideMenu;
+    this.searchInput = searchInput;
+    this.floatingOctocat = floatingOctocat;
+    this.searchPageSize = searchPageSize;
+    this.apiOrigin = apiOrigin;
+    this.githubUrl = githubUrl;
+    this.api = new MemeApiClient({ searchMemes, getTopMemes, castMemeVote });
+    this.memeFeedInstance = null;
+    this.infiniteScrollObserver = null;
+    this.attachInfiniteScrollObserver = null;
 
-  try {
-    const { query, creator } = getActiveFilters();
-    const nextFiles = await searchMemes({
-      query,
-      creator,
-      limit: SEARCH_PAGE_SIZE,
-      offset: searchOffset
+    const { initialCreator, initialQuery } = this.getInitialFilters();
+    this.initialCreator = initialCreator;
+    this.initialQuery = initialQuery;
+
+    this.store = new MemeClientStore({
+      activeCreator: initialCreator,
+      activeFeedMode: "hot",
+      activeQuery: initialQuery,
+      defaultHotFiles: [],
+      hasMoreMemes: true,
+      isLoadingMore: false,
+      searchOffset: searchPageSize
+    });
+  }
+
+  init() {
+    this.configureExternalLinks();
+    this.configureSearchInput();
+    this.configureSidebar();
+    this.configureInfiniteScroll();
+    this.bindEvents();
+    this.loadInitialFeed();
+  }
+
+  getInitialFilters() {
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialCreator = searchParams.get("c") || "";
+    const initialQuery = initialCreator || searchParams.get("q") || "";
+    return { initialCreator, initialQuery };
+  }
+
+  configureExternalLinks() {
+    this.floatingOctocat?.setAttribute("href", this.githubUrl);
+  }
+
+  configureSearchInput() {
+    if (!this.searchInput) {
+      return;
+    }
+
+    this.searchInput.setAttribute("initial-query", this.initialQuery);
+
+    const focusSearchInput = () => this.searchInput?.focus?.();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", focusSearchInput, { once: true });
+      return;
+    }
+
+    focusSearchInput();
+  }
+
+  configureSidebar() {
+    if (!this.sideMenu) {
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.textContent = `
+      @media (min-width: 768px) {
+        side-menu {
+          transition: transform 180ms ease, opacity 180ms ease;
+        }
+
+        body.${SIDEBAR_HIDDEN_CLASS} {
+          padding-left: 0;
+        }
+
+        body.${SIDEBAR_HIDDEN_CLASS} .search-shell {
+          left: 0;
+        }
+
+        body.${SIDEBAR_HIDDEN_CLASS} side-menu {
+          transform: translateX(calc(var(--side-menu-width, 250px) * -1));
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .sidebar-visibility-toggle {
+          position: fixed;
+          top: 16px;
+          left: 16px;
+          z-index: 1002;
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 999px;
+          background: rgba(24, 24, 24, 0.94);
+          color: white;
+          padding: 12px 16px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+      }
+
+      @media (max-width: 767px) {
+        .sidebar-visibility-toggle {
+          display: none;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sidebar-visibility-toggle";
+    button.setAttribute("aria-controls", "side-menu");
+    document.body.appendChild(button);
+
+    const syncButton = isHidden => {
+      button.textContent = isHidden ? "Show Menu" : "Hide Menu";
+      button.setAttribute("aria-label", isHidden ? "Show sidebar" : "Hide sidebar");
+      button.setAttribute("aria-pressed", String(!isHidden));
+    };
+
+    const applySidebarHidden = isHidden => {
+      const shouldHide = window.innerWidth >= 768 && isHidden;
+      document.body.classList.toggle(SIDEBAR_HIDDEN_CLASS, shouldHide);
+
+      if (shouldHide) {
+        this.sideMenu.open = false;
+        document.body.classList.remove("menu-open");
+      }
+
+      syncButton(shouldHide);
+      this.persistSidebarHidden(isHidden);
+    };
+
+    button.addEventListener("click", () => {
+      const nextHidden = !document.body.classList.contains(SIDEBAR_HIDDEN_CLASS);
+      applySidebarHidden(nextHidden);
     });
 
-    const appendedCount = memeFeedInstance?.appendFiles?.(nextFiles) ?? 0;
-    searchOffset += appendedCount;
-    hasMoreMemes = nextFiles.length === SEARCH_PAGE_SIZE;
-  } finally {
-    isLoadingMore = false;
-  }
-};
+    window.addEventListener("resize", () => {
+      applySidebarHidden(this.getInitialSidebarHiddenState());
+    });
 
-const attachInfiniteScrollObserver = createAttachInfiniteScrollObserver({
-  getObserver: () => infiniteScrollObserver,
-  loadMoreMemes,
-  setObserver: observer => {
-    infiniteScrollObserver = observer;
+    applySidebarHidden(this.getInitialSidebarHiddenState());
   }
+
+  bindEvents() {
+    this.searchInput?.addEventListener("change", event => {
+      if (event?.detail?.value === undefined) {
+        return;
+      }
+
+      this.runSearch(this.searchInput.value);
+    });
+
+    this.searchInput?.addEventListener("submit", event => {
+      if (event?.detail?.value === undefined) {
+        return;
+      }
+
+      this.runSearch(event.detail.value);
+    });
+  }
+
+  configureInfiniteScroll() {
+    this.attachInfiniteScrollObserver = createAttachInfiniteScrollObserver({
+      getObserver: () => this.infiniteScrollObserver,
+      loadMoreMemes: () => this.loadMoreMemes(),
+      setObserver: observer => {
+        this.infiniteScrollObserver = observer;
+      }
+    });
+  }
+
+  loadInitialFeed() {
+    loadDefaultFeed({
+      attachInfiniteScrollObserver: this.attachInfiniteScrollObserver,
+      getTopMemes: (...args) => this.api.getTopMemes(...args),
+      initialCreator: this.initialCreator,
+      initialQuery: this.initialQuery,
+      initializeFeed: ({ files, initialQueryValue }) => this.initializeFeed({ files, initialQueryValue }),
+      searchMemes: params => this.api.search(params),
+      searchPageSize: this.searchPageSize,
+      state: this.store.toLegacyState()
+    });
+  }
+
+  resetRenderedFeed() {
+    Array.from(this.feed?.children || []).forEach(child => window.cleanupMemeState?.(child));
+    this.feed?.replaceChildren();
+  }
+
+  initializeFeed({ files, initialQueryValue = this.initialQuery }) {
+    this.memeFeedInstance?.destroy?.();
+    this.resetRenderedFeed();
+
+    this.memeFeedInstance = initializeMemeFeed({
+      files,
+      feed: this.feed,
+      initialQuery: initialQueryValue,
+      searchMemes: params => this.api.search(params),
+      castMemeVote: (...args) => this.api.vote(...args),
+      filterFiles,
+      ejectMedia,
+      injectMedia
+    });
+
+    return this.memeFeedInstance;
+  }
+
+  getActiveFilters() {
+    const params = new URLSearchParams(window.location.search);
+    const creator = params.get("c") || "";
+    const query = creator ? "" : params.get("q") || "";
+    return { query, creator };
+  }
+
+  updateSearchQueryParam(query) {
+    const url = new URL(window.location.href);
+    const trimmedQuery = query.trim();
+
+    url.searchParams.delete("q");
+    url.searchParams.delete("c");
+
+    if (trimmedQuery) {
+      url.searchParams.set("q", trimmedQuery);
+    }
+
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  async runSearch(query) {
+    const activeQuery = query.trim();
+
+    this.store.set({
+      activeCreator: "",
+      activeFeedMode: "hot",
+      activeQuery,
+      hasMoreMemes: true,
+      isLoadingMore: false
+    });
+
+    this.updateSearchQueryParam(activeQuery);
+
+    const files = await this.api.search({
+      query: activeQuery,
+      creator: "",
+      limit: this.searchPageSize,
+      offset: 0
+    });
+
+    this.store.set({
+      hasMoreMemes: files.length === this.searchPageSize,
+      searchOffset: files.length
+    });
+
+    this.initializeFeed({
+      files,
+      initialQueryValue: activeQuery
+    });
+
+    this.attachInfiniteScrollObserver?.();
+  }
+
+  async loadMoreMemes() {
+    if (
+      this.store.get("activeFeedMode") !== "hot" ||
+      this.store.get("isLoadingMore") ||
+      !this.store.get("hasMoreMemes")
+    ) {
+      return;
+    }
+
+    this.store.set({ isLoadingMore: true });
+
+    try {
+      const { query, creator } = this.getActiveFilters();
+      const nextFiles = await this.api.search({
+        query,
+        creator,
+        limit: this.searchPageSize,
+        offset: this.store.get("searchOffset")
+      });
+
+      const appendedCount = this.memeFeedInstance?.appendFiles?.(nextFiles) ?? 0;
+      this.store.set({
+        hasMoreMemes: nextFiles.length === this.searchPageSize,
+        searchOffset: this.store.get("searchOffset") + appendedCount
+      });
+    } finally {
+      this.store.set({ isLoadingMore: false });
+    }
+  }
+
+  readStoredSidebarHidden() {
+    try {
+      return window.localStorage.getItem(SIDEBAR_HIDDEN_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  persistSidebarHidden(isHidden) {
+    try {
+      window.localStorage.setItem(SIDEBAR_HIDDEN_STORAGE_KEY, String(isHidden));
+    } catch {
+      // Ignore storage failures in restricted contexts.
+    }
+  }
+
+  getInitialSidebarHiddenState() {
+    const storedValue = this.readStoredSidebarHidden();
+    if (storedValue !== null) {
+      return storedValue === "true";
+    }
+
+    return (
+      window.location.search.includes("immersive=1") ||
+      window.location.search.includes("sidebar=hidden") ||
+      window.MEME_CLIENT_HIDE_SIDEBAR === true
+    );
+  }
+}
+
+const memeClient = new MemeClient({
+  feed: document.querySelector("#feed"),
+  sideMenu: document.querySelector("#side-menu"),
+  searchInput: document.querySelector("search-bar-tags#search-input"),
+  floatingOctocat: document.querySelector("floating-octocat")
 });
 
-sideMenu?.addEventListener("click", async event => {
-  return;
-  const item = event.target.closest("[data-side-menu-item]");
-  if (!item) {
-    return;
-  }
-
-  const hash = item.getAttribute("href");
-  if (hash?.startsWith("#")) {
-    window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}${hash}`);
-  }
-
-  event.preventDefault();
-  const loaded = await handleLoadMenuFeed(item);
-  if (loaded) {
-    updateActiveNavItem(item);
-  }
-});
-
-loadDefaultFeed({
-  attachInfiniteScrollObserver,
-  getTopMemes,
-  initialCreator,
-  initialQuery,
-  initializeFeed,
-  searchMemes,
-  searchPageSize: SEARCH_PAGE_SIZE,
-  state: feedState
-});
+memeClient.init();
