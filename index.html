@@ -89,16 +89,15 @@
       position: fixed;
       left: 0;
       right: 0;
-      bottom: max(16px, env(safe-area-inset-bottom));
+      bottom: max(0px, env(safe-area-inset-bottom));
       z-index: 1000;
-      padding: 0 16px;
       display: flex;
       justify-content: center;
       pointer-events: none;
     }
 
     .search-box {
-      width: min(920px, calc(100vw - 32px));
+      width: min(100%, 700px);
       margin: 0 auto;
       pointer-events: auto;
     }
@@ -151,6 +150,10 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
       align-items: start;
+    }
+
+    body[data-view="grid"] .search-box {
+      width: min(100%, 1200px);
     }
 
     body[data-view="grid"] .image-shell {
@@ -257,7 +260,6 @@
 
     @media (min-width: 768px) {
       .search-shell {
-        padding: 0 20px;
       }
 
       .feed {
@@ -382,9 +384,9 @@
       //bp.open('taskbar');      // taskbar app defaults fixed bottom
     });
   </script>
+    <!--
   <img id="floating-octocat" src="./assets/liberty-octocat-github-256.png" alt="Open meme-client on GitHub" role="link"
     tabindex="0">
-    <!--
     <button id="upload-memes">
       UPLOAD
     </button>

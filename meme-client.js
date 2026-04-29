@@ -1,5 +1,5 @@
 import "./lib/SearchBarTags.js";
-import { createContainer } from "./lib/createContainer.js";
+import "./lib/MemeCard.js";
 import { filterFiles } from "./lib/filterFiles.js";
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
@@ -209,12 +209,15 @@ searchInput?.addEventListener("submit", event => {
   }
 });
 
+// TODO: 
 Promise.all([
   searchMemes({ query: initialQuery, limit: SEARCH_PAGE_SIZE, offset: 0 }),
   getTopMemes()
   //getRandomMemes()
 ])
   .then(([files, memes]) => {
+    console.log("Initial search results:", files);
+    console.log("Top memes:", memes);
     const votesByHash = new Map(memes.map(({ hash, votes }) => [hash, votes]));
 
     files.sort((a, b) => {
@@ -246,14 +249,13 @@ Promise.all([
     }
 
     hasMoreMemes = files.length === SEARCH_PAGE_SIZE;
-
+    console.log("Sorted and randomized search results:", files);
     const memeFeed = initializeMemeFeed({
       files,
       feed: $feed,
       initialQuery,
       searchMemes,
       castMemeVote,
-      createContainer,
       filterFiles,
       ejectMedia,
       injectMedia
