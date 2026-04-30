@@ -19,7 +19,7 @@ import { MemeClient } from "./MemeClient.js";
       localStorage.setItem("access_token", token);
       access_token = token;
       console.log("Logged in with token:", token);
-      alert("Login successful! You can now close this window.");
+      //alert("Login successful! You can now close this window.");
       // hard-reload the page to trigger layout.js?
       // without this reload, we end up getting in a "guest" state
       // window.location.href = "/dashboard";
