@@ -1,8 +1,8 @@
-let DEFAULT_UPLOADS_ENDPOINT = "https://buddypond.com/api/uploads";
-let DEFAULT_FILES_BASE_URL = "https://files.buddypond.com";
+let DEFAULT_UPLOADS_ENDPOINT = "https://api.memeplexes.com/api/meme/uploads";
+let DEFAULT_FILES_BASE_URL = "https://m.marak.com/";
 
-DEFAULT_UPLOADS_ENDPOINT = "http://localhost:8888/api/meme/uploads"; // override for local testing
-DEFAULT_FILES_BASE_URL = "http://localhost:8888/files"; // override for local testing
+// DEFAULT_UPLOADS_ENDPOINT = "http://localhost:8888/api/meme/uploads"; // override for local testing
+// DEFAULT_FILES_BASE_URL = "http://localhost:8888/files"; // override for local testing
 
 const ignoredFiles = [
   ".DS_Store",
