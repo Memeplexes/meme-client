@@ -16,7 +16,7 @@ class PageTopbar extends HTMLElement {
         :host {
           position: fixed;
           top: 0;
-          left: var(--side-menu-width, 250px);
+          left: 0;
           right: 0;
           z-index: 1002;
           display: flex;
@@ -63,6 +63,55 @@ class PageTopbar extends HTMLElement {
           color: rgba(255, 255, 255, 0.6);
         }
 
+        .sidebar-controls {
+          display: inline-flex;
+          align-items: stretch;
+          overflow: hidden;
+          border-radius: 999px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+
+        .sidebar-visibility-toggle {
+          border: 0;
+          background: transparent;
+          color: white;
+          font-size: 12px;
+          cursor: pointer;
+        }
+
+        .sidebar-visibility-toggle:hover {
+          /* background: rgba(255, 255, 255, 0.08); */
+        }
+
+        .sidebar-visibility-toggle {
+          position: relative;
+          min-width: 96px;
+          padding: 12px 16px 12px 52px;
+          text-align: left;
+        }
+
+        .sidebar-visibility-toggle::before,
+        .sidebar-visibility-toggle::after {
+          content: "";
+          position: absolute;
+          top: 14px;
+          bottom: 14px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.9);
+        }
+
+        .sidebar-visibility-toggle::before {
+          left: 12px;
+          width: 8px;
+        }
+
+        .sidebar-visibility-toggle::after {
+          left: 24px;
+          width: 10px;
+          opacity: 0.5;
+        }
+
         .search-box {
           width: min(100%, 700px);
           margin: 0 auto;
@@ -101,12 +150,19 @@ class PageTopbar extends HTMLElement {
             font-size: 20px;
           }
 
+          .sidebar-controls {
+            display: none;
+          }
+
           .view-toggle {
             padding: 10px 14px;
           }
         }
       </style>
       <div class="page-topbar-inner" role="group" aria-label="${ariaLabel}">
+        <div class="sidebar-controls" aria-label="Sidebar controls" role="group">
+          <button class="sidebar-visibility-toggle" id="sidebar-visibility-toggle" type="button" aria-controls="side-menu">Menu</button>
+        </div>
         <div class="page-topbar-count">
           <strong class="page-topbar-count-value" data-page-topbar-total-memes>--</strong>
           <span class="page-topbar-count-label">Memes</span>
@@ -125,6 +181,14 @@ class PageTopbar extends HTMLElement {
 
   get searchInput() {
     return this.shadowRoot?.querySelector("search-bar-tags#search-input") || null;
+  }
+
+  get homeButton() {
+    return this.sidebarToggleButton;
+  }
+
+  get sidebarToggleButton() {
+    return this.shadowRoot?.querySelector("#sidebar-visibility-toggle") || null;
   }
 
   get toggleButton() {
