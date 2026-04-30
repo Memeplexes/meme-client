@@ -1,8 +1,10 @@
 let DEFAULT_UPLOADS_ENDPOINT = "https://api.memeplexes.com/api/meme/uploads";
+let DEFAULT_API_ENDPOINT = "https://api.memeplexes.com/api/meme";
 let DEFAULT_FILES_BASE_URL = "https://m.marak.com/";
 
 // DEFAULT_UPLOADS_ENDPOINT = "http://localhost:8888/api/meme/uploads"; // override for local testing
 // DEFAULT_FILES_BASE_URL = "http://localhost:8888/files"; // override for local testing
+// DEFAULT_API_ENDPOINT = "http://localhost:8888/api/meme"; // override for local testing
 
 const ignoredFiles = [
   ".DS_Store",
@@ -126,13 +128,13 @@ export default class Uploads {
   async removeFile(fileName) {
     const deleteParams = new URLSearchParams({
       v: "6",
-      prefix: fileName,
+      filename: fileName,
       me: this.me,
       qtokenid: this.qtokenid,
       userFolder: this.me,
       depth: "6"
     });
-    const url = `${this.uploadsEndpoint}/deleteFiles?${deleteParams.toString()}`;
+    const url = `${DEFAULT_API_ENDPOINT}/remove?${deleteParams.toString()}`;
 
     console.log("fetching delete url", url);
 
