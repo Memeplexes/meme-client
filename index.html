@@ -408,7 +408,7 @@
     });
   </script>
   <!-- <script src="https://buddypond.com/bp.js"></script> -->
-  <script src="http://localhost/bp.js"></script>
+  <!-- <script src="http://localhost/bp.js"></script> -->
   <script>
     const VIEW_STORAGE_KEY = 'meme-feed-view';
 
@@ -461,6 +461,7 @@
         }
       });
 
+      /*
       await bp.init({
         // env: 'dev',
         host: 'http://192.168.200.59'
@@ -474,13 +475,13 @@
       });
       bp.open('auth');
 
-
       // click event on .upload-memes
       document.getElementById('upload-memes').addEventListener('click', () => {
         bp.open('file-explorer', {
           // panel: '.targetDiv2'   // optional, default mode is Window
         });
-      });
+      });      */
+
 
       //bp.open('taskbar');      // taskbar app defaults fixed bottom
     });
