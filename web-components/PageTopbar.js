@@ -146,6 +146,10 @@ class PageTopbar extends HTMLElement {
             padding: 10px 12px;
           }
 
+          .page-topbar-count {
+            display: none;
+          }
+
           .page-topbar-count-value {
             font-size: 20px;
           }
@@ -153,6 +157,10 @@ class PageTopbar extends HTMLElement {
           .sidebar-controls {
             display: none;
           }
+          .search-box {
+            padding-left: 8px;
+          }
+
 
           .view-toggle {
             padding: 10px 14px;
