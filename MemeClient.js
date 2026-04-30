@@ -6,7 +6,8 @@ import { createAttachInfiniteScrollObserver } from "./attachInfiniteScrollObserv
 import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
 
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
-const API_ORIGIN = "http://localhost:8888";
+let API_ORIGIN = "http://localhost:8888";
+API_ORIGIN = "https://meme-server.cloudflare1973.workers.dev";
 const SEARCH_PAGE_SIZE = 10;
 const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
 const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
