@@ -318,7 +318,7 @@
 
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BJj1Q-LR.js"></script>
+  <script type="module" crossorigin src="/assets/index-DdXVu8CI.js"></script>
 </head>
 
 <body>
@@ -405,7 +405,7 @@
     });
   </script>
   <!-- <script src="https://buddypond.com/bp.js"></script> -->
-  <script src="http://localhost/bp.js"></script>
+  <!-- <script src="http://localhost/bp.js"></script> -->
   <script>
     const VIEW_STORAGE_KEY = 'meme-feed-view';
 
@@ -428,6 +428,11 @@
     document.addEventListener('DOMContentLoaded', async (event) => {
       const toggleButton = document.querySelector('page-topbar')?.toggleButton;
       const sideMenu = document.getElementById('side-menu');
+
+      // If viewport is mobile ( max-width: 767px ) and if so, default view to List ( not grid )
+      if (window.innerWidth <= 767) {
+        applyViewMode('list');
+      }
 
       const setMenuOpen = isOpen => {
         document.body.classList.toggle('menu-open', isOpen);
@@ -458,6 +463,7 @@
         }
       });
 
+      /*
       await bp.init({
         // env: 'dev',
         host: 'http://192.168.200.59'
@@ -471,13 +477,13 @@
       });
       bp.open('auth');
 
-
       // click event on .upload-memes
       document.getElementById('upload-memes').addEventListener('click', () => {
         bp.open('file-explorer', {
           // panel: '.targetDiv2'   // optional, default mode is Window
         });
-      });
+      });      */
+
 
       //bp.open('taskbar');      // taskbar app defaults fixed bottom
     });
