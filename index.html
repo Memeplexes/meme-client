@@ -61,12 +61,12 @@
     }
 
     .page-topbar-inner {
-      width: min(100%, 700px);
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      border: 1px solid rgba(36, 161, 83, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.16);
       background: rgba(17, 17, 17, 0.94);
       box-sizing: border-box;
       pointer-events: auto;
@@ -110,7 +110,7 @@
     }
 
     .feed-stat {
-      border: 1px solid rgba(36, 161, 83, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 14px;
       background: rgba(17, 17, 17, 0.94);
       padding: 14px 16px;
@@ -129,9 +129,9 @@
     }
 
     .feed-stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1eab55;
+      font-size: 16px;
+      /* font-weight: 700; */
+      /* color: #1eab55; */
       line-height: 1;
     }
 
@@ -238,7 +238,7 @@
     }
 
     .view-toggle {
-      border: 1px solid rgba(36, 161, 83, 0.35);
+      border: none;
       background: rgba(17, 17, 17, 0.94);
       color: #1eab55;
       padding: 12px 16px;
@@ -262,7 +262,7 @@
     }
 
     body[data-view="grid"] page-topbar .page-topbar-inner {
-      width: min(100%, 1200px);
+      /* width: min(100%, 1200px); */
     }
 
     body[data-view="grid"] .search-box {
@@ -464,6 +464,9 @@
         <strong class="page-topbar-count-value" data-page-topbar-total-memes>--</strong>
         <span class="page-topbar-count-label">Memes</span>
       </div>
+      <label class="search-box" for="search-input">
+        <search-bar-tags id="search-input" placeholder="Search..." initial-query=""></search-bar-tags>
+      </label>
       <button class="view-toggle" id="view-toggle" type="button" aria-pressed="false" data-grid-view-label="▦ Grid"
         data-list-view-label="☰ List">▦ Grid</button>
     </div>
@@ -471,15 +474,6 @@
   <feed-topbar></feed-topbar>
 
   <div class="feed" id="feed">
-  </div>
-  <div class="search-shell">
-    <label class="search-box" for="search-input">
-      <!--
-      <input id="search-input" type="search" placeholder="Search by filename" autocapitalize="none" autocomplete="off"
-        autocorrect="off" spellcheck="false">
-        -->
-      <search-bar-tags id="search-input" placeholder="Search..." initial-query=""></search-bar-tags>
-    </label>
   </div>
 
   <script type="module" src="/meme-client.js"></script>
