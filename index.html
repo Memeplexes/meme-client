@@ -432,6 +432,11 @@
       const toggleButton = document.querySelector('page-topbar')?.toggleButton;
       const sideMenu = document.getElementById('side-menu');
 
+      // If viewport is mobile ( max-width: 767px ) and if so, default view to List ( not grid )
+      if (window.innerWidth <= 767) {
+        applyViewMode('list');
+      }
+
       const setMenuOpen = isOpen => {
         document.body.classList.toggle('menu-open', isOpen);
         if (sideMenu) {
