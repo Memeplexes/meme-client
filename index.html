@@ -48,56 +48,6 @@
       gap: 20px;
     }
 
-    page-topbar {
-      position: fixed;
-      top: 0;
-      left: var(--side-menu-width, 250px);
-      right: 0;
-      z-index: 1002;
-      display: flex;
-      justify-content: center;
-      pointer-events: none;
-      box-sizing: border-box;
-    }
-
-    .page-topbar-inner {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(17, 17, 17, 0.94);
-      box-sizing: border-box;
-      pointer-events: auto;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .page-topbar-count {
-      min-width: 0;
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-      padding-left: 8px;
-      gap: 14px;
-    }
-
-    .page-topbar-count-value {
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1;
-      color: #1eab55;
-    }
-
-    .page-topbar-count-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(255, 255, 255, 0.6);
-    }
-
     .feed-topbar {
       max-width: 700px;
       margin: 0 auto;
@@ -206,49 +156,6 @@
       pointer-events: none;
     }
 
-    .search-box {
-      width: min(100%, 700px);
-      margin: 0 auto;
-      pointer-events: auto;
-    }
-
-    .search-box input {
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid rgba(36, 161, 83, 0.35);
-      border-radius: 999px;
-      background: rgba(17, 17, 17, 0.94);
-      color: #1eab55;
-      padding: 18px 24px;
-      font-size: 20px;
-      text-align: center;
-      outline: none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .search-box search-bar-tags {
-      display: block;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .search-box input::placeholder {
-      color: rgba(255, 255, 255, 0.45);
-    }
-
-    .view-toggle {
-      border: none;
-      background: rgba(17, 17, 17, 0.94);
-      color: #1eab55;
-      padding: 12px 16px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
     body[data-view="grid"] .feed {
       max-width: 1200px;
       display: grid;
@@ -259,14 +166,6 @@
 
     body[data-view="grid"] .feed-topbar {
       max-width: 1200px;
-    }
-
-    body[data-view="grid"] page-topbar .page-topbar-inner {
-      /* width: min(100%, 1200px); */
-    }
-
-    body[data-view="grid"] .search-box {
-      width: min(100%, 1200px);
     }
 
     body[data-view="grid"] .image-shell {
@@ -326,19 +225,6 @@
         padding-top: 88px;
       }
 
-      page-topbar {
-        left: 0;
-        padding: 10px 10px 0;
-      }
-
-      .page-topbar-inner {
-        padding: 10px 12px;
-      }
-
-      .page-topbar-count-value {
-        font-size: 20px;
-      }
-
       .feed-topbar {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
@@ -350,10 +236,6 @@
 
       .feed-stat-value {
         font-size: 20px;
-      }
-
-      .view-toggle {
-        padding: 10px 14px;
       }
 
       floating-octocat {
@@ -433,10 +315,6 @@
         bottom: calc(104px + env(safe-area-inset-bottom));
       }
 
-      .view-toggle {
-        top: 20px;
-        right: 20px;
-      }
     }
   </style>
 </head>
@@ -458,24 +336,13 @@
   </side-menu>
   <h1 class="me"> </h1>
 
-  <page-topbar aria-label="Feed controls">
-    <div class="page-topbar-inner">
-      <div class="page-topbar-count">
-        <strong class="page-topbar-count-value" data-page-topbar-total-memes>--</strong>
-        <span class="page-topbar-count-label">Memes</span>
-      </div>
-      <label class="search-box" for="search-input">
-        <search-bar-tags id="search-input" placeholder="Search..." initial-query=""></search-bar-tags>
-      </label>
-      <button class="view-toggle" id="view-toggle" type="button" aria-pressed="false" data-grid-view-label="▦ Grid"
-        data-list-view-label="☰ List">▦ Grid</button>
-    </div>
-  </page-topbar>
+  <page-topbar aria-label="Feed controls"></page-topbar>
   <feed-topbar></feed-topbar>
 
   <div class="feed" id="feed">
   </div>
 
+  <script type="module" src="./web-components/PageTopbar.js"></script>
   <script type="module" src="/meme-client.js"></script>
   <script type="module" src="./web-components/FeedTopbar.js"></script>
   <script type="module" src="./lib/web-components/SideMenu.js"></script>
@@ -526,7 +393,7 @@
 
         ::slotted([data-side-menu-item]) {
           border-color: rgba(36, 161, 83, 0.2);
-          background: #1eab55;
+          /* background: #1eab55; */
           color: #1eab55;
         }
 
@@ -548,7 +415,7 @@
       const nextMode = mode === 'grid' ? 'grid' : 'list';
       document.body.dataset.view = nextMode;
 
-      const toggleButton = document.getElementById('view-toggle');
+      const toggleButton = document.querySelector('page-topbar')?.toggleButton;
       if (toggleButton) {
         const isGrid = nextMode === 'grid';
         const listViewLabel = toggleButton.dataset.listViewLabel || '☰ List';
@@ -561,7 +428,7 @@
     applyViewMode(localStorage.getItem(VIEW_STORAGE_KEY) || 'grid');
 
     document.addEventListener('DOMContentLoaded', async (event) => {
-      const toggleButton = document.getElementById('view-toggle');
+      const toggleButton = document.querySelector('page-topbar')?.toggleButton;
       const sideMenu = document.getElementById('side-menu');
 
       const setMenuOpen = isOpen => {
