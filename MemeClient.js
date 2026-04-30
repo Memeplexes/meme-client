@@ -452,17 +452,33 @@ export class MemeClient {
 
     try {
       const { query, creator } = this.getActiveFilters();
+      const currentOffset = this.store.get("searchOffset");
+      console.log("[meme-client] loadMoreMemes requesting page", {
+        query,
+        creator,
+        limit: this.searchPageSize,
+        offset: currentOffset
+      });
+
       const nextFiles = await this.api.search({
         query,
         creator,
         limit: this.searchPageSize,
-        offset: this.store.get("searchOffset")
+        offset: currentOffset
       });
 
       const appendedCount = this.memeFeedInstance?.appendFiles?.(nextFiles) ?? 0;
+      const nextOffset = currentOffset + appendedCount;
+      console.log("[meme-client] loadMoreMemes received page", {
+        requestedOffset: currentOffset,
+        receivedCount: nextFiles.length,
+        appendedCount,
+        nextOffset
+      });
+
       this.store.set({
         hasMoreMemes: nextFiles.length === this.searchPageSize,
-        searchOffset: this.store.get("searchOffset") + appendedCount
+        searchOffset: nextOffset
       });
     } finally {
       this.store.set({ isLoadingMore: false });
