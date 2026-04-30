@@ -280,15 +280,15 @@ export class MemeClient {
 
   bindEvents() {
     const navigateFromSearchInput = value => {
-      this.updateSearchLocation({ query: value, creator: "" });
+      const query = Array.isArray(value) ? value.join(" ") : String(value || "");
+      this.updateSearchLocation({ query, creator: "" });
     };
 
     this.searchInput?.addEventListener("change", event => {
       if (event?.detail?.value === undefined) {
         return;
       }
-
-      navigateFromSearchInput(event.detail.value);
+      navigateFromSearchInput(event.detail.words);
     });
 
     this.searchInput?.addEventListener("submit", event => {
