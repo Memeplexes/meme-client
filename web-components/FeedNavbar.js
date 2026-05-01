@@ -11,6 +11,8 @@ class FeedNavbar extends HTMLElement {
           display: block;
           margin: 0 0 1rem;
           color: #fff;
+          margin-left: 24px;
+          margin-right: 24px;
         }
 
         .wrap {
@@ -18,14 +20,14 @@ class FeedNavbar extends HTMLElement {
           align-items: center;
           justify-content: space-between;
           gap: 1rem;
-          padding: 0.75rem 1rem;
+          padding-top: 0.5rem;
+          padding-left: 5px;
           border-radius: 0.75rem;
-          background: rgba(255, 255, 255, 0.06);
         }
 
         h2 {
           margin: 0;
-          font-size: 1rem;
+          font-size: 1.6rem;
           font-weight: 700;
         }
 
@@ -51,7 +53,7 @@ class FeedNavbar extends HTMLElement {
         }
       </style>
       <div class="wrap">
-        <h2>Feed</h2>
+        <h2>Hot Memes</h2>
         <div class="buttons" role="toolbar" aria-label="Feed range">
           <button type="button" aria-pressed="true">Today</button>
           <button type="button" aria-pressed="false">Week</button>
