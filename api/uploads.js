@@ -1,10 +1,8 @@
-let DEFAULT_UPLOADS_ENDPOINT = "https://api.memeplexes.com/api/meme/uploads";
-let DEFAULT_API_ENDPOINT = "https://api.memeplexes.com/api/meme";
-let DEFAULT_FILES_BASE_URL = "https://m.marak.com/";
+import { MEME_CONFIG } from "../lib/config.js";
 
-// DEFAULT_UPLOADS_ENDPOINT = "http://localhost:8888/api/meme/uploads"; // override for local testing
-// DEFAULT_FILES_BASE_URL = "http://localhost:8888/files"; // override for local testing
-// DEFAULT_API_ENDPOINT = "http://localhost:8888/api/meme"; // override for local testing
+const DEFAULT_UPLOADS_ENDPOINT = MEME_CONFIG.uploadsEndpoint;
+const DEFAULT_API_ENDPOINT = MEME_CONFIG.apiUrl;
+const DEFAULT_FILES_BASE_URL = MEME_CONFIG.filesBaseUrl;
 
 const ignoredFiles = [
   ".DS_Store",

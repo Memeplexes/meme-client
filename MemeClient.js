@@ -3,11 +3,11 @@ import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
 import { searchMemes, getTopMemes, castMemeVote } from "./lib/api.js";
 import { createAttachInfiniteScrollObserver } from "./attachInfiniteScrollObserver.js";
+import { MEME_CONFIG } from "./lib/config.js";
 import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
 
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
-let API_ORIGIN = "http://localhost:8888";
-API_ORIGIN = "https://meme-server.cloudflare1973.workers.dev";
+const API_ORIGIN = MEME_CONFIG.apiOrigin;
 const SEARCH_PAGE_SIZE = 10;
 const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
 const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
