@@ -1,7 +1,7 @@
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
-import { searchMemes, getTopMemes, castMemeVote } from "./lib/api.js";
+import { searchMemes, getTopMemes, castMemeVote, getMemeByFilename } from "./lib/api.js";
 import { createAttachInfiniteScrollObserver } from "./attachInfiniteScrollObserver.js";
 import { MEME_CONFIG } from "./lib/config.js";
 import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
@@ -28,6 +28,10 @@ class MemeApiClient {
 
   vote(...args) {
     return this.api.castMemeVote(...args);
+  }
+
+  getMemeByFilename(...args) {
+    return this.api.getMemeByFilename(...args);
   }
 }
 
@@ -75,17 +79,18 @@ export class MemeClient {
     this.searchPageSize = searchPageSize;
     this.apiOrigin = apiOrigin;
     this.githubUrl = githubUrl;
-    this.api = new MemeApiClient({ searchMemes, getTopMemes, castMemeVote });
+    this.api = new MemeApiClient({ searchMemes, getTopMemes, castMemeVote, getMemeByFilename });
     this.memeFeedInstance = null;
     this.infiniteScrollObserver = null;
     this.attachInfiniteScrollObserver = null;
     this.lastAppliedLocationKey = null;
     this.activeSearchRequest = 0;
 
-    const { initialCreator, initialQuery, initialFilter } = this.getInitialFilters();
+    const { initialCreator, initialQuery, initialFilter, initialMemeFilename } = this.getInitialFilters();
     this.initialCreator = initialCreator;
     this.initialQuery = initialQuery;
     this.initialFilter = initialFilter;
+    this.initialMemeFilename = initialMemeFilename;
 
     this.store = new MemeClientStore({
       activeCreator: initialCreator,
@@ -106,6 +111,7 @@ export class MemeClient {
     this.configureInfiniteScroll();
     this.bindEvents();
     this.applySearchFromLocation({ force: true });
+    void this.openInitialMemeModal();
   }
 
   getInitialFilters() {
@@ -113,7 +119,26 @@ export class MemeClient {
     const initialCreator = searchParams.get("c") || "";
     const initialQuery = initialCreator || searchParams.get("q") || "";
     const initialFilter = searchParams.get("s") || searchParams.get("filter") || "top";
-    return { initialCreator, initialQuery, initialFilter };
+    const initialMemeFilename = searchParams.get("m") || "";
+    return { initialCreator, initialQuery, initialFilter, initialMemeFilename };
+  }
+
+  async openInitialMemeModal() {
+    if (!this.initialMemeFilename) {
+      return;
+    }
+
+    const memeFilename = this.initialMemeFilename;
+    this.initialMemeFilename = "";
+
+    try {
+      const meme = await this.api.getMemeByFilename(memeFilename);
+      const modalClass = customElements.get("meme-modal");
+      const modal = modalClass?.ensure?.();
+      modal?.open?.({ meme });
+    } catch (error) {
+      console.error("[meme-client] Failed to open initial meme modal", { memeFilename, error });
+    }
   }
 
   configureExternalLinks() {
@@ -274,6 +299,14 @@ export class MemeClient {
         if (requestId !== this.activeSearchRequest) {
           return;
         }
+        // if initialFilter is set up the feed title should reflect that
+        const feedTitleElement =
+          document.querySelector("feed-navbar")?.shadowRoot?.getElementById("feed-title");
+
+        if (feedTitleElement) {
+          const filterLabel = filter ? filter.charAt(0).toUpperCase() + filter.slice(1) : "Hot";
+          feedTitleElement.textContent = `${filterLabel} Memes`;
+        }
 
         this.initializeFeed({ files, initialQueryValue });
       },
@@ -351,6 +384,12 @@ export class MemeClient {
     if (trimmedFilter !== null) {
       if (trimmedFilter) {
         url.searchParams.set("s", trimmedFilter);
+        const feedTitleElement =
+          document.querySelector("feed-navbar")?.shadowRoot?.getElementById("feed-title");
+        if (feedTitleElement) {
+          const filterLabel = trimmedFilter.charAt(0).toUpperCase() + trimmedFilter.slice(1);
+          feedTitleElement.textContent = `${filterLabel} Memes`;
+        }
       } else {
         url.searchParams.delete("s");
       }

@@ -53,7 +53,7 @@ class FeedNavbar extends HTMLElement {
         }
       </style>
       <div class="wrap">
-        <h2>Hot Memes</h2>
+        <h2 id="feed-title">Hot Memes</h2>
         <div class="buttons" role="toolbar" aria-label="Feed range">
           <button type="button" aria-pressed="true">Today</button>
           <button type="button" aria-pressed="false">Week</button>
