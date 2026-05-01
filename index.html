@@ -332,26 +332,78 @@
   </style>
 
   <side-menu id="side-menu" title="Feed" toggle-label="Open feed menu" menu-label="Feed menu">
-    <a class="is-active" href="#hot" data-side-menu-item data-active data-nav-sort="top"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" alt="" aria-hidden="true"><span class="side-menu-label">Hot</span></a>
-    <a href="#new" data-side-menu-item data-nav-sort="latest"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2728.svg" alt="" aria-hidden="true"><span class="side-menu-label">New</span></a>
-    <a href="#rising" data-side-menu-item data-nav-sort="rising"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4c8.svg" alt="" aria-hidden="true"><span class="side-menu-label">Rising</span></a>
-    <a href="#contests" data-side-menu-item data-nav-page="contests"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3c6.svg" alt="" aria-hidden="true"><span class="side-menu-label">Contests</span></a>
-    <a href="#trending-tags" data-side-menu-item data-nav-page="trending-tags"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f7.svg" alt="" aria-hidden="true"><span class="side-menu-label">Trending Tags</span></a>
-    <a href="#top-creators" data-side-menu-item data-nav-page="top-creators"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f451.svg" alt="" aria-hidden="true"><span class="side-menu-label">Top Creators</span></a>
+    <a class="is-active" href="/hot" data-side-menu-item data-active data-nav-sort="top"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" alt="" aria-hidden="true"><span class="side-menu-label">Hot</span></a>
+    <a href="/new" data-side-menu-item data-nav-sort="latest" data-nav-page="/new"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2728.svg" alt="" aria-hidden="true"><span class="side-menu-label">New</span></a>
+    <a href="/rising" data-side-menu-item data-nav-sort="rising" data-nav-page="/rising"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4c8.svg" alt="" aria-hidden="true"><span class="side-menu-label">Rising</span></a>
+    <a href="/contests" data-side-menu-item data-nav-page="contests"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3c6.svg" alt="" aria-hidden="true"><span class="side-menu-label">Contests</span></a>
+    <a href="/trending-tags" data-side-menu-item data-nav-page="trending-tags"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f7.svg" alt="" aria-hidden="true"><span class="side-menu-label">Trending Tags</span></a>
+    <a href="/top-creators" data-side-menu-item data-nav-page="top-creators"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f451.svg" alt="" aria-hidden="true"><span class="side-menu-label">Top Creators</span></a>
   </side-menu>
   <h1 class="me"> </h1>
+      <page-topbar aria-label="Feed controls"></page-topbar>
+  <div id="page-root"></div>
+  <script>
+    const feedRouteSorts = {
+      "/": "top",
+      "/hot": "top",
+      "/new": "latest",
+      "/rising": "rising"
+    };
 
-  <page-topbar aria-label="Feed controls"></page-topbar>
-  <feed-topbar></feed-topbar>
-  <feed-navbar></feed-navbar>
+    const routes = {
+      "/": "meme-feed",
+      "/hot": "meme-feed",
+      "/new": "meme-feed",
+      "/rising": "meme-feed",
+      "/trending-tags": "trending-tags",
+      "/top-creators": "top-creators",
+      "/contests": "meme-contests"
+    };
 
-  <div class="feed" id="feed">
-  </div>
+    const pageRoot = document.getElementById("page-root");
 
-  <script type="module" src="./lib/web-components/PageTopbar.js"></script>
-  <script type="module" src="./web-components/FeedNavbar.js"></script>
+    function renderRoute(pathname = window.location.pathname) {
+      const nextSort = feedRouteSorts[pathname];
+      if (nextSort) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("s") !== nextSort) {
+          url.searchParams.set("s", nextSort);
+          url.searchParams.delete("filter");
+          window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+        }
+      }
+
+      const tagName = routes[pathname] || routes["/"];
+      pageRoot.replaceChildren(document.createElement(tagName));
+    }
+
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest('a[href^="/"]');
+      if (!link || link.target || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      const url = new URL(link.href, window.location.origin);
+      if (url.origin !== window.location.origin) {
+        return;
+      }
+
+      event.preventDefault();
+      if (url.pathname !== window.location.pathname) {
+        window.history.pushState({}, "", url.pathname);
+      }
+      renderRoute(url.pathname);
+    });
+
+    window.addEventListener("popstate", () => renderRoute());
+    renderRoute();
+  </script>
+
+  <script type="module" src="./lib/web-components/pages/MemeFeed.js"></script>
+  <script type="module" src="./lib/web-components/pages/TopCreators.js"></script>
+  <script type="module" src="./lib/web-components/pages/TrendingTags.js"></script>
+  <script type="module" src="./lib/web-components/pages/MemeContests.js"></script>
   <script type="module" src="/meme-client.js"></script>
-  <script type="module" src="./lib/web-components/FeedTopbar.js"></script>
   <script type="module" src="./lib/web-components/SideMenu.js"></script>
   <script>
     customElements.whenDefined("side-menu").then(() => {
