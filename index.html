@@ -62,8 +62,8 @@
     .feed-stat {
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 14px;
-      background: rgba(17, 17, 17, 0.94);
-      padding: 14px 16px;
+      background: #1b1b1d;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -72,7 +72,7 @@
     }
 
     .feed-stat-label {
-      font-size: 12px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: rgba(255, 255, 255, 0.6);
@@ -339,11 +339,13 @@
 
   <page-topbar aria-label="Feed controls"></page-topbar>
   <feed-topbar></feed-topbar>
+  <feed-navbar></feed-navbar>
 
   <div class="feed" id="feed">
   </div>
 
   <script type="module" src="./lib/web-components/PageTopbar.js"></script>
+  <script type="module" src="./web-components/FeedNavbar.js"></script>
   <script type="module" src="/meme-client.js"></script>
   <script type="module" src="./lib/web-components/FeedTopbar.js"></script>
   <script type="module" src="./lib/web-components/SideMenu.js"></script>

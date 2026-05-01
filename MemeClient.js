@@ -18,8 +18,8 @@ class MemeApiClient {
     this.api = api;
   }
 
-  search({ query = "", creator = "", limit = SEARCH_PAGE_SIZE, offset = 0 }) {
-    return this.api.searchMemes({ query, creator, limit, offset });
+  search({ query = "", creator = "", filter = "", limit = SEARCH_PAGE_SIZE, offset = 0 }) {
+    return this.api.searchMemes({ query, creator, filter, limit, offset });
   }
 
   getTopMemes(...args) {
@@ -82,14 +82,16 @@ export class MemeClient {
     this.lastAppliedLocationKey = null;
     this.activeSearchRequest = 0;
 
-    const { initialCreator, initialQuery } = this.getInitialFilters();
+    const { initialCreator, initialQuery, initialFilter } = this.getInitialFilters();
     this.initialCreator = initialCreator;
     this.initialQuery = initialQuery;
+    this.initialFilter = initialFilter;
 
     this.store = new MemeClientStore({
       activeCreator: initialCreator,
       activeFeedMode: "hot",
       activeQuery: initialQuery,
+      activeFilter: initialFilter,
       defaultHotFiles: [],
       hasMoreMemes: true,
       isLoadingMore: false,
@@ -110,7 +112,8 @@ export class MemeClient {
     const searchParams = new URLSearchParams(window.location.search);
     const initialCreator = searchParams.get("c") || "";
     const initialQuery = initialCreator || searchParams.get("q") || "";
-    return { initialCreator, initialQuery };
+    const initialFilter = searchParams.get("filter") || "";
+    return { initialCreator, initialQuery, initialFilter };
   }
 
   configureExternalLinks() {
@@ -249,13 +252,23 @@ export class MemeClient {
     });
   }
 
-  loadInitialFeed({ query = "", creator = "" } = {}) {
+  loadInitialFeed({ query = "", creator = "", filter = "" } = {}) {
     const requestId = ++this.activeSearchRequest;
+
+    this.store.set({
+      activeCreator: creator,
+      activeFeedMode: "hot",
+      activeFilter: filter,
+      activeQuery: query,
+      hasMoreMemes: true,
+      isLoadingMore: false
+    });
 
     loadDefaultFeed({
       attachInfiniteScrollObserver: this.attachInfiniteScrollObserver,
       getTopMemes: (...args) => this.api.getTopMemes(...args),
       initialCreator: creator,
+      initialFilter: filter,
       initialQuery: creator ? creator : query,
       initializeFeed: ({ files, initialQueryValue }) => {
         if (requestId !== this.activeSearchRequest) {
@@ -297,15 +310,16 @@ export class MemeClient {
     const params = new URLSearchParams(window.location.search);
     const creator = params.get("c") || "";
     const query = creator ? "" : params.get("q") || "";
-    return { query, creator };
+    const filter = params.get("filter") || "";
+    return { query, creator, filter };
   }
 
   updateSearchQueryParam(query) {
     this.updateSearchLocation({ query, creator: "" });
   }
 
-  getLocationKey({ query, creator }) {
-    return JSON.stringify({ query: query || "", creator: creator || "" });
+  getLocationKey({ query, creator, filter }) {
+    return JSON.stringify({ query: query || "", creator: creator || "", filter: filter || "" });
   }
 
   syncSearchInputValue(value) {
@@ -316,12 +330,12 @@ export class MemeClient {
     this.searchInput.value = value;
   }
 
-  updateSearchLocation({ query = "", creator = "" }) {
+  updateSearchLocation({ query = "", creator = "", filter } = {}) {
     const trimmedQuery = query.trim();
     const trimmedCreator = creator.trim();
+    const trimmedFilter = typeof filter === "string" ? filter.trim() : null;
     const url = new URL(window.location.href);
     const previousSearch = url.search;
-
     if (trimmedQuery) {
       url.searchParams.set("q", trimmedQuery);
     } else {
@@ -334,6 +348,14 @@ export class MemeClient {
       url.searchParams.delete("c");
     }
 
+    if (trimmedFilter !== null) {
+      if (trimmedFilter) {
+        url.searchParams.set("filter", trimmedFilter);
+      } else {
+        url.searchParams.delete("filter");
+      }
+    }
+
     const nextSearch = url.search;
     if (nextSearch === previousSearch) {
       this.applySearchFromLocation();
@@ -344,13 +366,15 @@ export class MemeClient {
     window.dispatchEvent(new CustomEvent(SEARCH_LOCATION_CHANGE_EVENT));
   }
 
-  async runSearch(query) {
+  async runSearch(query, filter = "") {
     const requestId = ++this.activeSearchRequest;
     const activeQuery = query.trim();
+    const activeFilter = filter.trim();
 
     this.store.set({
       activeCreator: "",
       activeFeedMode: "hot",
+      activeFilter: activeFilter,
       activeQuery,
       hasMoreMemes: true,
       isLoadingMore: false
@@ -359,6 +383,7 @@ export class MemeClient {
     const files = await this.api.search({
       query: activeQuery,
       creator: "",
+      filter: activeFilter,
       limit: this.searchPageSize,
       offset: 0
     });
@@ -380,13 +405,15 @@ export class MemeClient {
     this.attachInfiniteScrollObserver?.();
   }
 
-  async runCreatorSearch(creator) {
+  async runCreatorSearch(creator, filter = "") {
     const requestId = ++this.activeSearchRequest;
     const activeCreator = creator.trim();
+    const activeFilter = filter.trim();
 
     this.store.set({
       activeCreator,
       activeFeedMode: "hot",
+      activeFilter: activeFilter,
       activeQuery: "",
       hasMoreMemes: true,
       isLoadingMore: false
@@ -395,6 +422,7 @@ export class MemeClient {
     const files = await this.api.search({
       query: "",
       creator: activeCreator,
+      filter: activeFilter,
       limit: this.searchPageSize,
       offset: 0
     });
@@ -428,12 +456,12 @@ export class MemeClient {
     this.syncSearchInputValue(filters.creator || filters.query);
 
     if (filters.creator) {
-      this.runCreatorSearch(filters.creator);
+      this.runCreatorSearch(filters.creator, filters.filter);
       return;
     }
 
     if (filters.query) {
-      this.runSearch(filters.query);
+      this.runSearch(filters.query, filters.filter);
       return;
     }
 
@@ -452,11 +480,12 @@ export class MemeClient {
     this.store.set({ isLoadingMore: true });
 
     try {
-      const { query, creator } = this.getActiveFilters();
+      const { query, creator, filter } = this.getActiveFilters();
       const currentOffset = this.store.get("searchOffset");
       console.log("[meme-client] loadMoreMemes requesting page", {
         query,
         creator,
+        filter,
         limit: this.searchPageSize,
         offset: currentOffset
       });
@@ -464,6 +493,7 @@ export class MemeClient {
       const nextFiles = await this.api.search({
         query,
         creator,
+        filter,
         limit: this.searchPageSize,
         offset: currentOffset
       });
