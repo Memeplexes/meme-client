@@ -112,7 +112,7 @@ export class MemeClient {
     const searchParams = new URLSearchParams(window.location.search);
     const initialCreator = searchParams.get("c") || "";
     const initialQuery = initialCreator || searchParams.get("q") || "";
-    const initialFilter = searchParams.get("filter") || "";
+    const initialFilter = searchParams.get("s") || searchParams.get("filter") || "top";
     return { initialCreator, initialQuery, initialFilter };
   }
 
@@ -310,7 +310,7 @@ export class MemeClient {
     const params = new URLSearchParams(window.location.search);
     const creator = params.get("c") || "";
     const query = creator ? "" : params.get("q") || "";
-    const filter = params.get("filter") || "";
+    const filter = params.get("s") || params.get("filter") || "top";
     return { query, creator, filter };
   }
 
@@ -350,11 +350,13 @@ export class MemeClient {
 
     if (trimmedFilter !== null) {
       if (trimmedFilter) {
-        url.searchParams.set("filter", trimmedFilter);
+        url.searchParams.set("s", trimmedFilter);
       } else {
-        url.searchParams.delete("filter");
+        url.searchParams.delete("s");
       }
     }
+
+    url.searchParams.delete("filter");
 
     const nextSearch = url.search;
     if (nextSearch === previousSearch) {
