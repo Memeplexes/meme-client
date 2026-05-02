@@ -114,6 +114,11 @@ export class MemeClient {
     void this.openInitialMemeModal();
   }
 
+  syncRenderedElements() {
+    this.feed = document.querySelector("#feed");
+    this.searchInput = document.querySelector("page-topbar")?.searchInput || this.searchInput;
+  }
+
   getInitialFilters() {
     const searchParams = new URLSearchParams(window.location.search);
     const initialCreator = searchParams.get("c") || "";
@@ -254,7 +259,7 @@ export class MemeClient {
       navigateFromSearchInput(event.detail.value);
     });
 
-    this.feed?.addEventListener("meme-client:navigate-search", event => {
+    document.addEventListener("meme-client:navigate-search", event => {
       this.updateSearchLocation(event.detail || {});
     });
 
@@ -317,14 +322,16 @@ export class MemeClient {
   }
 
   resetRenderedFeed() {
+    this.syncRenderedElements();
     Array.from(this.feed?.children || []).forEach(child => window.cleanupMemeState?.(child));
     this.feed?.replaceChildren();
   }
 
   initializeFeed({ files, initialQueryValue = this.initialQuery }) {
+    this.syncRenderedElements();
     this.memeFeedInstance?.destroy?.();
     this.resetRenderedFeed();
-
+    // console.log("[meme-client] Initializing feed with files", { count: files.length, initialQueryValue });
     this.memeFeedInstance = initializeMemeFeed({
       files,
       feed: this.feed,
@@ -411,7 +418,7 @@ export class MemeClient {
     const requestId = ++this.activeSearchRequest;
     const activeQuery = query.trim();
     const activeFilter = filter.trim();
-
+    // console.log("[meme-client] Running search with query and filter", { activeQuery, activeFilter });
     this.store.set({
       activeCreator: "",
       activeFeedMode: "hot",
@@ -428,8 +435,10 @@ export class MemeClient {
       limit: this.searchPageSize,
       offset: 0
     });
-
+    // console.log("[meme-client] Search returned files", { count: files.length, query: activeQuery, filter: activeFilter });
+    // console.log(files)
     if (requestId !== this.activeSearchRequest) {
+      // alert("Search results arrived out of order, discarding");
       return;
     }
 
@@ -437,7 +446,6 @@ export class MemeClient {
       hasMoreMemes: files.length === this.searchPageSize,
       searchOffset: files.length
     });
-
     this.initializeFeed({
       files,
       initialQueryValue: activeQuery
@@ -486,16 +494,18 @@ export class MemeClient {
   }
 
   applySearchFromLocation({ force = false } = {}) {
+    this.syncRenderedElements();
     const filters = this.getActiveFilters();
     const locationKey = this.getLocationKey(filters);
 
     if (!force && locationKey === this.lastAppliedLocationKey) {
+      // console.log("[meme-client] Search location unchanged, skipping apply", { filters });
       return;
     }
 
     this.lastAppliedLocationKey = locationKey;
     this.syncSearchInputValue(filters.creator || filters.query);
-
+    // console.log("[meme-client] Applying search from location", { filters });
     if (filters.creator) {
       this.runCreatorSearch(filters.creator, filters.filter);
       return;
@@ -503,6 +513,11 @@ export class MemeClient {
 
     if (filters.query) {
       this.runSearch(filters.query, filters.filter);
+      return;
+    }
+
+    if (filters.filter) {
+      this.runSearch("", filters.filter);
       return;
     }
 

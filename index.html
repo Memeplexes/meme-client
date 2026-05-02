@@ -189,10 +189,10 @@
     }
 
     body[data-view="grid"] .feed {
-      max-width: 960px;
+      max-width: 1100px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      gap: 24px;
       align-items: start;
     }
 
@@ -429,17 +429,29 @@
 
     function renderRoute(pathname = window.location.pathname) {
       const nextSort = feedRouteSorts[pathname];
+      let shouldDispatchSearchLocationChange = false;
+      // console.log('Rendering route for pathname:', pathname, 'with sort:', nextSort);
       if (nextSort) {
         const url = new URL(window.location.href);
         if (url.searchParams.get("s") !== nextSort) {
           url.searchParams.set("s", nextSort);
           url.searchParams.delete("filter");
           window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+          shouldDispatchSearchLocationChange = true;
         }
       }
 
       const tagName = routes[pathname] || routes["/"];
-      pageRoot.replaceChildren(document.createElement(tagName));
+      const activeTagName = pageRoot.firstElementChild?.tagName?.toLowerCase();
+      if (activeTagName !== tagName) {
+        pageRoot.replaceChildren(document.createElement(tagName));
+      }
+
+      if (shouldDispatchSearchLocationChange) {
+        queueMicrotask(() => {
+          window.dispatchEvent(new CustomEvent("meme-client:search-location-change"));
+        });
+      }
     }
 
     document.addEventListener("click", (event) => {
