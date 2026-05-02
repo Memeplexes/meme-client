@@ -548,9 +548,13 @@
 
   <script>
     const VIEW_STORAGE_KEY = 'meme-feed-view';
+    const GRID_VIEW_MIN_WIDTH = 1200;
+
+    const resolveViewMode = mode =>
+      window.innerWidth < GRID_VIEW_MIN_WIDTH ? 'list' : 'grid';
 
     const applyViewMode = mode => {
-      const nextMode = mode === 'grid' ? 'grid' : 'list';
+      const nextMode = resolveViewMode(mode);
       document.body.dataset.view = nextMode;
 
       const toggleButton = document.querySelector('page-topbar')?.toggleButton;
@@ -568,11 +572,9 @@
     document.addEventListener('DOMContentLoaded', async (event) => {
       const toggleButton = document.querySelector('page-topbar')?.toggleButton;
       const sideMenu = document.getElementById('side-menu');
+      const syncViewMode = () => applyViewMode(localStorage.getItem(VIEW_STORAGE_KEY) || 'grid');
 
-      // If viewport is mobile ( max-width: 767px ) and if so, default view to List ( not grid )
-      if (window.innerWidth <= 767) {
-        applyViewMode('list');
-      }
+      syncViewMode();
 
       const setMenuOpen = isOpen => {
         document.body.classList.toggle('menu-open', isOpen);
@@ -582,7 +584,7 @@
       };
 
       toggleButton?.addEventListener('click', () => {
-        const nextMode = document.body.dataset.view === 'grid' ? 'list' : 'grid';
+        const nextMode = resolveViewMode(document.body.dataset.view);
         applyViewMode(nextMode);
         localStorage.setItem(VIEW_STORAGE_KEY, nextMode);
       });
@@ -598,6 +600,7 @@
       });
 
       window.addEventListener('resize', () => {
+        syncViewMode();
         if (window.innerWidth > 767) {
           setMenuOpen(false);
         }
