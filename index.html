@@ -93,6 +93,9 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
+    .feed-stat svg {
+      color: #24a153;
+    }
 
     .feed-stat-label {
       padding-left: 4px;
@@ -293,6 +296,11 @@
       height: 18px;
       flex: 0 0 18px;
       object-fit: contain;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .side-menu-label {
@@ -366,24 +374,30 @@
   </style>
 
   <side-menu id="side-menu" title="Feed" toggle-label="Open feed menu" menu-label="Feed menu">
-    <a class="is-active" href="/hot" data-side-menu-item data-active data-nav-sort="top"><img class="side-menu-icon"
-        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" alt="" aria-hidden="true"><span
-        class="side-menu-label">Hot</span></a>
-    <a href="/new" data-side-menu-item data-nav-sort="latest" data-nav-page="/new"><img class="side-menu-icon"
-        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2728.svg" alt="" aria-hidden="true"><span
+    <a class="is-active" href="/hot" data-side-menu-item data-active data-nav-sort="top"><svg class="side-menu-icon"
+        viewBox="0 0 24 24" aria-hidden="true"><path
+          d="M12 3c.53 2.67 2.31 4.93 4.73 6.03A6 6 0 1 1 8 14.5c0-1.76.77-3.34 2-4.44.35.9.86 1.71 1.5 2.38C13.56 10.37 14 7.75 12 3Z" />
+      </svg><span class="side-menu-label">Hot</span></a>
+    <a href="/new" data-side-menu-item data-nav-sort="latest" data-nav-page="/new"><svg class="side-menu-icon"
+        viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v6" /><path d="M15 6H9" /><path
+          d="M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-5" /><path d="M21 10H3" /><path d="m16 16-4-4-4 4" /></svg><span
         class="side-menu-label">New</span></a>
-    <a href="/rising" data-side-menu-item data-nav-sort="rising" data-nav-page="/rising"><img class="side-menu-icon"
-        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4c8.svg" alt="" aria-hidden="true"><span
+    <a href="/rising" data-side-menu-item data-nav-sort="rising" data-nav-page="/rising"><svg class="side-menu-icon"
+        viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg><span
         class="side-menu-label">Rising</span></a>
-    <a href="/contests" data-side-menu-item data-nav-page="contests"><img class="side-menu-icon"
-        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3c6.svg" alt="" aria-hidden="true"><span
+    <a href="/contests" data-side-menu-item data-nav-page="contests"><svg class="side-menu-icon" viewBox="0 0 24 24"
+        aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path
+          d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path
+          d="M14 14.66V17c0 .55.47.98.97 1.21 1.18.54 2.03 2.03 2.03 3.79" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg><span
         class="side-menu-label">Contests</span></a>
-    <a href="/trending-tags" data-side-menu-item data-nav-page="trending-tags"><img class="side-menu-icon"
-        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f7.svg" alt="" aria-hidden="true"><span
-        class="side-menu-label">Trending Tags</span></a>
-    <a href="/top-creators" data-side-menu-item data-nav-page="top-creators"><img class="side-menu-icon"
-        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f451.svg" alt="" aria-hidden="true"><span
-        class="side-menu-label">Top Creators</span></a>
+    <a href="/trending-tags" data-side-menu-item data-nav-page="trending-tags"><svg class="side-menu-icon"
+        viewBox="0 0 24 24" aria-hidden="true"><path
+          d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82Z" /><path
+          d="M7 7h.01" /></svg><span class="side-menu-label">Trending Tags</span></a>
+    <a href="/top-creators" data-side-menu-item data-nav-page="top-creators"><svg class="side-menu-icon"
+        viewBox="0 0 24 24" aria-hidden="true"><path d="m16 14 2 7" /><path d="M12 14v8" /><path d="M8 14 6 21" /><path
+          d="M12 3 8 7h8l-4-4Z" /><path d="M6 7h12v3a6 6 0 0 1-12 0V7Z" /></svg><span class="side-menu-label">Top
+        Creators</span></a>
   </side-menu>
   <div id="top-banner">
     <text-banner>Welcome to danks.meme - Find dank memes - Host Dank Memes - Create Meme Contests - Welcome to
