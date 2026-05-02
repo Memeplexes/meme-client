@@ -39,6 +39,19 @@
       border-radius: 999px;
     }
 
+
+    #page-root {
+      position: relative;
+      top: 96px;
+    }
+    meme-feed {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0px;
+    }
+
     .feed {
       max-width: 700px;
       margin: auto;
@@ -54,7 +67,6 @@
       max-width: 700px;
       margin: 0 auto;
       padding: 10px;
-      padding-top: 40px;
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
@@ -63,10 +75,17 @@
       margin-right: 16px;
     }
 
+    .feed-stat-content {
+      display: flex !important;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+    }
+
     .feed-stat {
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      /* border: 1px solid rgba(255, 255, 255, 0.16); */
       border-radius: 14px;
-      background: #1b1b1d;
+      /* background: #1b1b1d; */
       padding: 10px;
       display: flex;
       flex-direction: column;
@@ -76,8 +95,9 @@
     }
 
     .feed-stat-label {
-      font-size: 10px;
-      text-transform: uppercase;
+      padding-left: 4px;
+      font-size: 14px;
+      transform: uppercase;
       letter-spacing: 0.08em;
       color: rgba(255, 255, 255, 0.6);
     }
@@ -91,6 +111,7 @@
 
     .meme {
       margin-bottom: 0;
+      margin-right: 8px;
     }
 
     .meme img,
@@ -99,6 +120,10 @@
       height: auto;
       display: block;
       background: #050505;
+    }
+
+    .meme-footer {
+      padding: 0px;
     }
 
     video {
@@ -161,7 +186,7 @@
     }
 
     body[data-view="grid"] .feed {
-      max-width: 1200px;
+      max-width: 960px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
@@ -169,7 +194,7 @@
     }
 
     body[data-view="grid"] .feed-topbar {
-      max-width: 1200px;
+      max-width: 920px;
     }
 
     body[data-view="grid"] .image-shell {
@@ -225,9 +250,7 @@
     }
 
     @media (max-width: 767px) {
-      .feed {
-        
-      }
+      .feed {}
 
       .feed-topbar {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -250,6 +273,7 @@
         height: 48px;
       }
     }
+
     side-menu {
       --side-menu-width: 250px;
     }
@@ -289,6 +313,17 @@
       left: var(--side-menu-width, 250px);
     }
 
+    #top-banner {
+      padding-top: 12px;
+            padding-bottom: 12px;
+
+      position: fixed;
+      left: 12px;
+      width: 98%;
+      background-color: black;
+      z-index: 1000;
+    }
+
     @media (max-width: 767px) {
       body {
         padding-left: 0;
@@ -308,8 +343,7 @@
     }
 
     @media (min-width: 768px) {
-      .search-shell {
-      }
+      .search-shell {}
 
       .feed {
         padding-bottom: 110px;
@@ -332,15 +366,32 @@
   </style>
 
   <side-menu id="side-menu" title="Feed" toggle-label="Open feed menu" menu-label="Feed menu">
-    <a class="is-active" href="/hot" data-side-menu-item data-active data-nav-sort="top"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" alt="" aria-hidden="true"><span class="side-menu-label">Hot</span></a>
-    <a href="/new" data-side-menu-item data-nav-sort="latest" data-nav-page="/new"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2728.svg" alt="" aria-hidden="true"><span class="side-menu-label">New</span></a>
-    <a href="/rising" data-side-menu-item data-nav-sort="rising" data-nav-page="/rising"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4c8.svg" alt="" aria-hidden="true"><span class="side-menu-label">Rising</span></a>
-    <a href="/contests" data-side-menu-item data-nav-page="contests"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3c6.svg" alt="" aria-hidden="true"><span class="side-menu-label">Contests</span></a>
-    <a href="/trending-tags" data-side-menu-item data-nav-page="trending-tags"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f7.svg" alt="" aria-hidden="true"><span class="side-menu-label">Trending Tags</span></a>
-    <a href="/top-creators" data-side-menu-item data-nav-page="top-creators"><img class="side-menu-icon" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f451.svg" alt="" aria-hidden="true"><span class="side-menu-label">Top Creators</span></a>
+    <a class="is-active" href="/hot" data-side-menu-item data-active data-nav-sort="top"><img class="side-menu-icon"
+        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" alt="" aria-hidden="true"><span
+        class="side-menu-label">Hot</span></a>
+    <a href="/new" data-side-menu-item data-nav-sort="latest" data-nav-page="/new"><img class="side-menu-icon"
+        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2728.svg" alt="" aria-hidden="true"><span
+        class="side-menu-label">New</span></a>
+    <a href="/rising" data-side-menu-item data-nav-sort="rising" data-nav-page="/rising"><img class="side-menu-icon"
+        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4c8.svg" alt="" aria-hidden="true"><span
+        class="side-menu-label">Rising</span></a>
+    <a href="/contests" data-side-menu-item data-nav-page="contests"><img class="side-menu-icon"
+        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3c6.svg" alt="" aria-hidden="true"><span
+        class="side-menu-label">Contests</span></a>
+    <a href="/trending-tags" data-side-menu-item data-nav-page="trending-tags"><img class="side-menu-icon"
+        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f7.svg" alt="" aria-hidden="true"><span
+        class="side-menu-label">Trending Tags</span></a>
+    <a href="/top-creators" data-side-menu-item data-nav-page="top-creators"><img class="side-menu-icon"
+        src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f451.svg" alt="" aria-hidden="true"><span
+        class="side-menu-label">Top Creators</span></a>
   </side-menu>
-  <h1 class="me"> </h1>
-      <page-topbar aria-label="Feed controls"></page-topbar>
+  <div id="top-banner">
+    <text-banner>Welcome to danks.meme - Find dank memes - Host Dank Memes - Create Meme Contests - Welcome to
+      danks.meme - Find dank memes - Host Dank Memes - Create Meme Contests - Welcome to danks.meme - Find dank memes -
+      Host Dank Memes - Create Meme Contests</text-banner>
+  </div>
+
+  <page-topbar aria-label="Feed controls"></page-topbar>
   <div id="page-root"></div>
   <script>
     const feedRouteSorts = {
@@ -549,7 +600,7 @@
       //bp.open('taskbar');      // taskbar app defaults fixed bottom
     });
   </script>
-    <!--
+  <!--
   <floating-octocat></floating-octocat>
     <button id="upload-memes">
       UPLOAD
