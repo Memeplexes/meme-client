@@ -8,7 +8,7 @@ import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
 
 const GITHUB_URL = "https://github.com/buddypond/meme-client";
 const API_ORIGIN = MEME_CONFIG.apiOrigin;
-const SEARCH_PAGE_SIZE = 10;
+const SEARCH_PAGE_SIZE = 32;
 const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
 const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
 const SEARCH_LOCATION_CHANGE_EVENT = "meme-client:search-location-change";
@@ -337,6 +337,7 @@ export class MemeClient {
       feed: this.feed,
       initialQuery: initialQueryValue,
       onRequestSearch: params => this.updateSearchLocation(params),
+      onRequestMore: () => this.loadMoreMemes(),
       searchMemes: params => this.api.search(params),
       castMemeVote: (...args) => this.api.vote(...args),
       ejectMedia,
