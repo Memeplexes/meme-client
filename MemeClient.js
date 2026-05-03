@@ -18,8 +18,15 @@ class MemeApiClient {
     this.api = api;
   }
 
-  search({ query = "", creator = "", filter = "", limit = SEARCH_PAGE_SIZE, offset = 0 }) {
-    return this.api.searchMemes({ query, creator, filter, limit, offset });
+  search({
+    query = "",
+    creator = "",
+    filter = "",
+    dateRange = "",
+    limit = SEARCH_PAGE_SIZE,
+    offset = 0
+  }) {
+    return this.api.searchMemes({ query, creator, filter, dateRange, limit, offset });
   }
 
   getTopMemes(...args) {
@@ -86,14 +93,17 @@ export class MemeClient {
     this.lastAppliedLocationKey = null;
     this.activeSearchRequest = 0;
 
-    const { initialCreator, initialQuery, initialFilter, initialMemeFilename } = this.getInitialFilters();
+    const { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename } =
+      this.getInitialFilters();
     this.initialCreator = initialCreator;
     this.initialQuery = initialQuery;
     this.initialFilter = initialFilter;
+    this.initialDateRange = initialDateRange;
     this.initialMemeFilename = initialMemeFilename;
 
     this.store = new MemeClientStore({
       activeCreator: initialCreator,
+      activeDateRange: initialDateRange,
       activeFeedMode: "hot",
       activeQuery: initialQuery,
       activeFilter: initialFilter,
@@ -124,8 +134,9 @@ export class MemeClient {
     const initialCreator = searchParams.get("c") || "";
     const initialQuery = initialCreator || searchParams.get("q") || "";
     const initialFilter = searchParams.get("s") || searchParams.get("filter") || "top";
+    const initialDateRange = searchParams.get("d") || "";
     const initialMemeFilename = searchParams.get("m") || "";
-    return { initialCreator, initialQuery, initialFilter, initialMemeFilename };
+    return { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename };
   }
 
   async openInitialMemeModal() {
@@ -282,11 +293,12 @@ export class MemeClient {
     });
   }
 
-  loadInitialFeed({ query = "", creator = "", filter = "" } = {}) {
+  loadInitialFeed({ query = "", creator = "", filter = "", dateRange = "" } = {}) {
     const requestId = ++this.activeSearchRequest;
 
     this.store.set({
       activeCreator: creator,
+      activeDateRange: dateRange,
       activeFeedMode: "hot",
       activeFilter: filter,
       activeQuery: query,
@@ -298,6 +310,7 @@ export class MemeClient {
       attachInfiniteScrollObserver: this.attachInfiniteScrollObserver,
       getTopMemes: (...args) => this.api.getTopMemes(...args),
       initialCreator: creator,
+      initialDateRange: dateRange,
       initialFilter: filter,
       initialQuery: creator ? creator : query,
       initializeFeed: ({ files, initialQueryValue }) => {
@@ -352,15 +365,21 @@ export class MemeClient {
     const creator = params.get("c") || "";
     const query = creator ? "" : params.get("q") || "";
     const filter = params.get("s") || params.get("filter") || "top";
-    return { query, creator, filter };
+    const dateRange = params.get("d") || "";
+    return { query, creator, filter, dateRange };
   }
 
   updateSearchQueryParam(query) {
     this.updateSearchLocation({ query, creator: "" });
   }
 
-  getLocationKey({ query, creator, filter }) {
-    return JSON.stringify({ query: query || "", creator: creator || "", filter: filter || "" });
+  getLocationKey({ query, creator, filter, dateRange }) {
+    return JSON.stringify({
+      query: query || "",
+      creator: creator || "",
+      filter: filter || "",
+      dateRange: dateRange || ""
+    });
   }
 
   syncSearchInputValue(value) {
@@ -371,25 +390,45 @@ export class MemeClient {
     this.searchInput.value = value;
   }
 
-  updateSearchLocation({ query = "", creator = "", filter } = {}) {
-    const trimmedQuery = query.trim();
-    const trimmedCreator = creator.trim();
-    const trimmedFilter = typeof filter === "string" ? filter.trim() : null;
+  updateSearchLocation(nextState = {}) {
+    const hasQuery = Object.prototype.hasOwnProperty.call(nextState, "query");
+    const hasCreator = Object.prototype.hasOwnProperty.call(nextState, "creator");
+    const hasFilter = Object.prototype.hasOwnProperty.call(nextState, "filter");
+    const hasDateRange = Object.prototype.hasOwnProperty.call(nextState, "dateRange");
+    const trimmedQuery = hasQuery ? String(nextState.query || "").trim() : null;
+    const trimmedCreator = hasCreator ? String(nextState.creator || "").trim() : null;
+    const trimmedFilter = hasFilter && typeof nextState.filter === "string"
+      ? nextState.filter.trim()
+      : hasFilter
+        ? ""
+        : null;
+    const trimmedDateRange = hasDateRange && typeof nextState.dateRange === "string"
+      ? nextState.dateRange.trim()
+      : hasDateRange
+        ? ""
+        : null;
     const url = new URL(window.location.href);
     const previousSearch = url.search;
-    if (trimmedQuery) {
-      url.searchParams.set("q", trimmedQuery);
-    } else {
-      url.searchParams.delete("q");
+
+    if (hasQuery) {
+      url.searchParams.delete("query");
+      if (trimmedQuery) {
+        url.searchParams.set("q", trimmedQuery);
+      } else {
+        url.searchParams.delete("q");
+      }
     }
 
-    if (trimmedCreator) {
-      url.searchParams.set("c", trimmedCreator);
-    } else {
-      url.searchParams.delete("c");
+    if (hasCreator) {
+      if (trimmedCreator) {
+        url.searchParams.set("c", trimmedCreator);
+      } else {
+        url.searchParams.delete("c");
+      }
     }
 
-    if (trimmedFilter !== null) {
+    if (hasFilter) {
+      url.searchParams.delete("filter");
       if (trimmedFilter) {
         url.searchParams.set("s", trimmedFilter);
         const feedTitleElement =
@@ -403,7 +442,29 @@ export class MemeClient {
       }
     }
 
-    url.searchParams.delete("filter");
+    if (hasDateRange) {
+      url.searchParams.delete("dateRange");
+      if (trimmedDateRange) {
+        url.searchParams.set("d", trimmedDateRange);
+      } else {
+        url.searchParams.delete("d");
+      }
+    }
+
+    if (!hasQuery && url.searchParams.has("query") && !url.searchParams.has("q")) {
+      url.searchParams.set("q", url.searchParams.get("query"));
+      url.searchParams.delete("query");
+    }
+
+    if (!hasFilter && url.searchParams.has("filter") && !url.searchParams.has("s")) {
+      url.searchParams.set("s", url.searchParams.get("filter"));
+      url.searchParams.delete("filter");
+    }
+
+    if (!hasDateRange && url.searchParams.has("dateRange") && !url.searchParams.has("d")) {
+      url.searchParams.set("d", url.searchParams.get("dateRange"));
+      url.searchParams.delete("dateRange");
+    }
 
     const nextSearch = url.search;
     if (nextSearch === previousSearch) {
@@ -415,13 +476,15 @@ export class MemeClient {
     window.dispatchEvent(new CustomEvent(SEARCH_LOCATION_CHANGE_EVENT));
   }
 
-  async runSearch(query, filter = "") {
+  async runSearch(query, filter = "", dateRange = "") {
     const requestId = ++this.activeSearchRequest;
     const activeQuery = query.trim();
     const activeFilter = filter.trim();
+    const activeDateRange = dateRange.trim();
     // console.log("[meme-client] Running search with query and filter", { activeQuery, activeFilter });
     this.store.set({
       activeCreator: "",
+      activeDateRange,
       activeFeedMode: "hot",
       activeFilter: activeFilter,
       activeQuery,
@@ -433,6 +496,7 @@ export class MemeClient {
       query: activeQuery,
       creator: "",
       filter: activeFilter,
+      dateRange: activeDateRange,
       limit: this.searchPageSize,
       offset: 0
     });
@@ -455,13 +519,15 @@ export class MemeClient {
     this.attachInfiniteScrollObserver?.();
   }
 
-  async runCreatorSearch(creator, filter = "") {
+  async runCreatorSearch(creator, filter = "", dateRange = "") {
     const requestId = ++this.activeSearchRequest;
     const activeCreator = creator.trim();
     const activeFilter = filter.trim();
+    const activeDateRange = dateRange.trim();
 
     this.store.set({
       activeCreator,
+      activeDateRange,
       activeFeedMode: "hot",
       activeFilter: activeFilter,
       activeQuery: "",
@@ -473,6 +539,7 @@ export class MemeClient {
       query: "",
       creator: activeCreator,
       filter: activeFilter,
+      dateRange: activeDateRange,
       limit: this.searchPageSize,
       offset: 0
     });
@@ -508,17 +575,17 @@ export class MemeClient {
     this.syncSearchInputValue(filters.creator || filters.query);
     // console.log("[meme-client] Applying search from location", { filters });
     if (filters.creator) {
-      this.runCreatorSearch(filters.creator, filters.filter);
+      this.runCreatorSearch(filters.creator, filters.filter, filters.dateRange);
       return;
     }
 
     if (filters.query) {
-      this.runSearch(filters.query, filters.filter);
+      this.runSearch(filters.query, filters.filter, filters.dateRange);
       return;
     }
 
-    if (filters.filter) {
-      this.runSearch("", filters.filter);
+    if (filters.filter || filters.dateRange) {
+      this.runSearch("", filters.filter, filters.dateRange);
       return;
     }
 
@@ -537,11 +604,12 @@ export class MemeClient {
     this.store.set({ isLoadingMore: true });
 
     try {
-      const { query, creator, filter } = this.getActiveFilters();
+      const { query, creator, filter, dateRange } = this.getActiveFilters();
       const currentOffset = this.store.get("searchOffset");
       console.log("[meme-client] loadMoreMemes requesting page", {
         query,
         creator,
+        dateRange,
         filter,
         limit: this.searchPageSize,
         offset: currentOffset
@@ -551,6 +619,7 @@ export class MemeClient {
         query,
         creator,
         filter,
+        dateRange,
         limit: this.searchPageSize,
         offset: currentOffset
       });
