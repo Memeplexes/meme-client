@@ -12,6 +12,7 @@ const SEARCH_PAGE_SIZE = 32;
 const SIDEBAR_HIDDEN_CLASS = "sidebar-hidden";
 const SIDEBAR_HIDDEN_STORAGE_KEY = "meme-feed-sidebar-hidden";
 const SEARCH_LOCATION_CHANGE_EVENT = "meme-client:search-location-change";
+const CLIENT_READY_EVENT = "meme-client:ready";
 
 class MemeApiClient {
   constructor(api) {
@@ -92,6 +93,7 @@ export class MemeClient {
     this.attachInfiniteScrollObserver = null;
     this.lastAppliedLocationKey = null;
     this.activeSearchRequest = 0;
+    this.hasDispatchedReady = false;
 
     const { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename } =
       this.getInitialFilters();
@@ -266,7 +268,6 @@ export class MemeClient {
       if (event?.detail?.value === undefined) {
         return;
       }
-
       navigateFromSearchInput(event.detail.value);
     });
 
@@ -356,6 +357,11 @@ export class MemeClient {
       ejectMedia,
       injectMedia
     });
+
+    if (!this.hasDispatchedReady) {
+      this.hasDispatchedReady = true;
+      window.dispatchEvent(new CustomEvent(CLIENT_READY_EVENT));
+    }
 
     return this.memeFeedInstance;
   }
