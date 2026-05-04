@@ -79,6 +79,7 @@ export default class Uploads {
       qtokenid: this.qtokenid,
       me: this.me
     });
+    console.log('signedUrlParams', signedUrlParams.toString());
     const signedUrlResponse = await fetch(
       `${this.uploadsEndpoint}/generate-signed-url?${signedUrlParams.toString()}`
     );
@@ -87,8 +88,9 @@ export default class Uploads {
       throw new Error(`Failed to get signed URL: ${await signedUrlResponse.text()}`);
     }
 
-    const { signedUrl } = await signedUrlResponse.json();
+    const { signedUrl, remoteFilePath } = await signedUrlResponse.json();
     console.log(`PUTTING Received signed URL for ${filePath}: ${signedUrl}`);
+    console.log('remoteFilePath', remoteFilePath);
     const uploadResponse = await fetch(signedUrl, {
       method: "PUT",
       headers: {
@@ -101,9 +103,10 @@ export default class Uploads {
       throw new Error(`HTTP error during file upload: ${await uploadResponse.text()}`);
     }
 
-    onProgress({ file, filePath, uploaded: fileSize, total: fileSize });
+    await onProgress({ file, filePath, uploaded: fileSize, total: fileSize });
     console.log(`File uploaded successfully: ${filePath}`);
-    return `${this.filesBaseUrl}/${encodeURIComponent(this.me)}/${filePath}`;
+    // return `${this.filesBaseUrl}/${remoteFilePath}`;
+    return remoteFilePath;
   }
 
   async uploadFiles(files, onProgress = noop) {
