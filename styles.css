@@ -442,10 +442,8 @@
     }
 
     @media (max-width: 767px) {
-
       #page-root {
-              top: 250px;
-
+        top: 200px;
       }
       .feed {}
 
