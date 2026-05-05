@@ -1,7 +1,7 @@
 import { ejectMedia } from "./lib/ejectMedia.js";
 import { injectMedia } from "./lib/injectMedia.js";
 import { initializeMemeFeed } from "./lib/initializeMemeFeed.js";
-import { searchMemes, getTopMemes, castMemeVote, getMemeByFilename } from "./api/api.js";
+import { searchMemes, getTopMemes, castMemeVote, getMemeByFilename } from "./lib/api/api.js";
 import { createAttachInfiniteScrollObserver } from "./attachInfiniteScrollObserver.js";
 import { MEME_CONFIG } from "./lib/config.js";
 import { loadDefaultFeed } from "./lib/loadDefaultFeed.js";
