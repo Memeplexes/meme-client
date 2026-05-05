@@ -8,8 +8,8 @@ const notyf = new Notyf({
 });
 
 
-import Uploads from "../api/uploads.js";
-import { MEME_CONFIG } from "./config.js";
+import Uploads from "./uploads.js";
+import { MEME_CONFIG } from "../lib/config.js";
 
 let token = localStorage.getItem("access_token");
 if (token) {
