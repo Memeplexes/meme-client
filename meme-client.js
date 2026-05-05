@@ -9,7 +9,6 @@ const token = urlParams.get("token");
 const accountName = urlParams.get("accountName");
 let me = null;
 let access_token = null;
-console.log("Received accountName:", accountName);
 if (accountName) {
   localStorage.setItem("memeplexes-username", accountName);
   me = accountName;
