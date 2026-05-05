@@ -6,7 +6,7 @@
   "author": "Marak Squires <marak.squires@gmail.com>",
   "scripts": {
     "start": "vite --host",
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build && cp memes.json dist/memes.json && cp assets/* dist/assets/",
     "preview": "vite preview"
   },

@@ -478,6 +478,15 @@ export class MemeClient {
       return;
     }
 
+    // TODO: this should be shared data with the frontend SPA router
+    let staticPages = ["/trending-tags", "/top-creators", "/contests"];
+
+    // if the current url is any of the static pages, we do need to navigate to /hot? with the search params, otherwise the feed won't update and the url will be out of sync with the displayed content
+    if (staticPages.includes(window.location.pathname)) {
+      window.location.href = `/hot?${url.searchParams.toString()}`;
+      return;
+    }
+
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     window.dispatchEvent(new CustomEvent(SEARCH_LOCATION_CHANGE_EVENT));
   }
