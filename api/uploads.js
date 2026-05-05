@@ -1,4 +1,5 @@
 import { MEME_CONFIG } from "../lib/config.js";
+import { apiRequest} from "./api.js";
 
 const DEFAULT_UPLOADS_ENDPOINT = MEME_CONFIG.uploadsEndpoint;
 const DEFAULT_API_ENDPOINT = MEME_CONFIG.apiUrl;
@@ -126,6 +127,7 @@ export default class Uploads {
 
     return uploadedFiles;
   }
+
   async removeFile(fileName) {
     const deleteParams = new URLSearchParams({
       v: "6",
@@ -140,11 +142,7 @@ export default class Uploads {
     console.log("fetching delete url", url);
 
     try {
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete file: ${await response.text()}`);
-      }
+      await apiRequest(url, "removeFile");
 
       return fileName;
     } catch (err) {

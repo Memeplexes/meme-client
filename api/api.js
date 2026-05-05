@@ -64,7 +64,7 @@ function handleAuthFailure(action, authError) {
   window.location.reload();
 }
 
-async function apiRequest(url, action, options = {}) {
+export async function apiRequest(url, action, options = {}) {
   const accessToken = getAccessToken();
   const headers = new Headers(options.headers || {});
 
