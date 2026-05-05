@@ -152,8 +152,23 @@ export class MemeClient {
     try {
       const meme = await this.api.getMemeByFilename(memeFilename);
       const modalClass = customElements.get("meme-modal");
+      const getFeedCard = () => Array.from(document.querySelectorAll("meme-card"))
+        .find(card => card?._metadata?.filename === memeFilename);
+
+      let feedCard = getFeedCard();
+      if (!feedCard && !this.hasDispatchedReady) {
+        await new Promise(resolve => {
+          window.addEventListener(CLIENT_READY_EVENT, resolve, { once: true });
+        });
+        feedCard = getFeedCard();
+      }
+
       const modal = modalClass?.ensure?.();
-      modal?.open?.({ meme });
+      modal?.open?.({ meme: feedCard ? {
+        ...feedCard._metadata,
+        _voteState: feedCard._state,
+        _voteForMeme: feedCard._options?.voteForMeme
+      } : meme });
     } catch (error) {
       console.error("[meme-client] Failed to open initial meme modal", { memeFilename, error });
     }
