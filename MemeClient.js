@@ -24,10 +24,11 @@ class MemeApiClient {
     creator = "",
     filter = "",
     dateRange = "",
+    contestId = "",
     limit = SEARCH_PAGE_SIZE,
     offset = 0
   }) {
-    return this.api.searchMemes({ query, creator, filter, dateRange, limit, offset });
+    return this.api.searchMemes({ query, creator, filter, dateRange, contestId, limit, offset });
   }
 
   getTopMemes(...args) {
@@ -95,13 +96,14 @@ export class MemeClient {
     this.activeSearchRequest = 0;
     this.hasDispatchedReady = false;
 
-    const { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename } =
+    const { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename, initialContestId } =
       this.getInitialFilters();
     this.initialCreator = initialCreator;
     this.initialQuery = initialQuery;
     this.initialFilter = initialFilter;
     this.initialDateRange = initialDateRange;
     this.initialMemeFilename = initialMemeFilename;
+    this.initialContestId = initialContestId;
 
     this.store = new MemeClientStore({
       activeCreator: initialCreator,
@@ -109,6 +111,7 @@ export class MemeClient {
       activeFeedMode: "hot",
       activeQuery: initialQuery,
       activeFilter: initialFilter,
+      activeContestId: initialContestId,
       defaultHotFiles: [],
       hasMoreMemes: true,
       isLoadingMore: false,
@@ -138,7 +141,8 @@ export class MemeClient {
     const initialFilter = searchParams.get("s") || searchParams.get("filter") || "top";
     const initialDateRange = searchParams.get("d") || "";
     const initialMemeFilename = searchParams.get("m") || "";
-    return { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename };
+    const initialContestId = searchParams.get("cn") || "";
+    return { initialCreator, initialQuery, initialFilter, initialDateRange, initialMemeFilename, initialContestId };
   }
 
   async openInitialMemeModal() {
@@ -511,6 +515,7 @@ export class MemeClient {
     const activeQuery = query.trim();
     const activeFilter = filter.trim();
     const activeDateRange = dateRange.trim();
+    const activeContestId = this.store.get("activeContestId") || "";
     // console.log("[meme-client] Running search with query and filter", { activeQuery, activeFilter });
     this.store.set({
       activeCreator: "",
@@ -527,6 +532,7 @@ export class MemeClient {
       creator: "",
       filter: activeFilter,
       dateRange: activeDateRange,
+      ...(activeContestId ? { contestId: activeContestId } : {}),
       limit: this.searchPageSize,
       offset: 0
     });
@@ -554,6 +560,7 @@ export class MemeClient {
     const activeCreator = creator.trim();
     const activeFilter = filter.trim();
     const activeDateRange = dateRange.trim();
+    const activeContestId = this.store.get("activeContestId") || "";
 
     this.store.set({
       activeCreator,
@@ -570,6 +577,7 @@ export class MemeClient {
       creator: activeCreator,
       filter: activeFilter,
       dateRange: activeDateRange,
+      ...(activeContestId ? { contestId: activeContestId } : {}),
       limit: this.searchPageSize,
       offset: 0
     });
@@ -634,11 +642,12 @@ export class MemeClient {
     this.store.set({ isLoadingMore: true });
 
     try {
-      const { query, creator, filter, dateRange } = this.getActiveFilters();
+      const { query, creator, filter, dateRange, contestId } = this.getActiveFilters();
       const currentOffset = this.store.get("searchOffset");
       console.log("[meme-client] loadMoreMemes requesting page", {
         query,
         creator,
+        contestId,
         dateRange,
         filter,
         limit: this.searchPageSize,
@@ -650,6 +659,7 @@ export class MemeClient {
         creator,
         filter,
         dateRange,
+        ...(contestId ? { contestId } : {}),
         limit: this.searchPageSize,
         offset: currentOffset
       });
