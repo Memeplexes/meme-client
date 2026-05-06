@@ -515,11 +515,11 @@
 
     #top-banner {
       padding-top: 12px;
-            padding-bottom: 12px;
-
+      padding-bottom: 12px;
+      height: 30px;
       position: fixed;
-      left: 12px;
-      width: 98%;
+      left: 0px;
+      width: 100%;
       background-color: var(--theme-bg-app);
       z-index: 1000;
     }
